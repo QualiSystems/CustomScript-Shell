@@ -56,7 +56,8 @@ class CustomScriptShell(object):
 
     def execute_command(self, context, request, cancellation_context):
         """
-        Method executes a command on the target host and returns the output in format "{str_out: '', str_err: ''}"
+        Method executes a command on the target host and returns the output in format
+        "{'str_out': '', 'str_err': '', 'exit_code': ''}"
         This method is intended to be used directly by other shells and expects to get password/ssh key in clear text
         :type context: ResourceCommandContext
         :type request: str
@@ -72,7 +73,7 @@ class CustomScriptShell(object):
 
                 service = ScriptExecutorSelector.get(command_conf.host_conf, logger, cancel_sampler)
 
-                script_file = ScriptFile(self._get_script_name_for_command(service), request)
+                script_file = ScriptFile(self._get_script_name_for_command(service), command_conf.command_info.cmd)
 
                 logger.info('Connecting ...')
                 self._connect(service, cancel_sampler, command_conf.timeout_minutes)
@@ -80,7 +81,11 @@ class CustomScriptShell(object):
 
                 result = service.execute(script_file, command_conf.host_conf.parameters, output_writer, False)
 
-                return json.dumps(result)
+                return self._prepare_result(result)
+
+    def _prepare_result(self, result):
+        json_result = {'std_out': result.std_out, 'std_err': result.std_err, 'exit_code': result.status_code}
+        return json.dumps(json_result)
 
     def _get_script_name_for_command(self, service):
         """
@@ -155,7 +160,7 @@ class CustomScriptShell(object):
 # 		"connectionMethod": "ssh"
 # 	}
 # }'''
-context = ResourceCommandContext()
+# context = ResourceCommandContext()
 # context.resource = ResourceContextDetails()
 # context.resource.name = 'TEST Resource'
 # context.reservation = ReservationContextDetails()

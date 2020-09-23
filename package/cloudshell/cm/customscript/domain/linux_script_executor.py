@@ -25,6 +25,7 @@ class LinuxScriptExecutor(IScriptExecutor):
             self.std_err = std_err
             self.std_out = std_out
             self.success = exit_code == 0
+            self.status_code = exit_code  # adding this prop to align object with Windows result object
 
     def __init__(self, logger, target_host, cancel_sampler):
         """
