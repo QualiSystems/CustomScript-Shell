@@ -1,3 +1,5 @@
+import base64
+import json
 import urllib
 from logging import Logger
 
@@ -36,18 +38,34 @@ class ScriptDownloader(object):
         :type auth: HttpAuth
         :rtype ScriptFile
         """
-        response = requests.get(url, auth=(auth.username, auth.password) if auth else None, stream=True)
-        file_name = self._get_filename(response)
-        file_txt = ''
+        if auth.username == "GITLAB":
+            response = requests.get(url, headers={'PRIVATE-TOKEN': auth.password})
+            json_response = json.loads(response.text)
+            # get file name and validate
+            file_name = self._get_file_name_gitlab(json_response)
+            # get file content
+            content_bytes = base64.b64decode(json_response['content'])
+            file_txt = content_bytes.decode('ascii')
+        else:
+            response = requests.get(url, auth=(auth.username, auth.password) if auth else None, stream=True)
+            file_name = self._get_filename(response)
+            file_txt = ''
 
-        for chunk in response.iter_content(ScriptDownloader.CHUNK_SIZE):
-            if chunk:
-                file_txt += ''.join(chunk)
-            self.cancel_sampler.throw_if_canceled()
+            for chunk in response.iter_content(ScriptDownloader.CHUNK_SIZE):
+                if chunk:
+                    file_txt += ''.join(chunk)
+                self.cancel_sampler.throw_if_canceled()
 
         self._validate_response(response, file_txt)
 
         return ScriptFile(name=file_name, text=file_txt)
+
+    def _get_file_name_gitlab(self, json_response):
+        file_name = json_response['file_name']
+        matching = re.match(self.filename_pattern, file_name)
+        if not matching:
+            self._raise_file_name_not_valid(file_name)
+        return file_name
 
     def _validate_response(self, response, content):
         if response.status_code < 200 or response.status_code > 300:
@@ -71,5 +89,8 @@ class ScriptDownloader(object):
             if matching:
                 file_name = matching.group('filename')
         if not file_name:
-            raise Exception("Script file of supported types: '.sh', '.bash', '.ps1' was not found")
+            self._raise_file_name_not_valid(file_name)
         return file_name.strip()
+
+    def _raise_file_name_not_valid(self, file_name):
+        raise Exception("Script file of supported types: '.sh', '.bash', '.ps1' was not found")
