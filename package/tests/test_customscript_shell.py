@@ -6,7 +6,7 @@ from mock import patch, Mock
 from cloudshell.cm.customscript.customscript_shell import CustomScriptShell
 from cloudshell.cm.customscript.domain.reservation_output_writer import ReservationOutputWriter
 from cloudshell.cm.customscript.domain.script_configuration import ScriptConfiguration
-from cloudshell.cm.customscript.domain.script_file import ScriptFile
+from cloudshell.cm.customscript.domain.script_file import ScriptFile, ScriptsData
 from tests.helpers import Any
 
 
@@ -79,7 +79,7 @@ class TestCustomScriptShell(TestCase):
 
     def test_get_expected_file_extensions_pass(self):
         self.executor.get_expected_file_extensions = Mock(return_value=['A','B'])
-        self.downloader.return_value = ScriptFile('file.A','')
+        self.downloader.return_value = ScriptsData(ScriptFile('file.A', ''))
 
         CustomScriptShell().execute_script(self.context, '', self.cancel_context)
 
@@ -89,7 +89,7 @@ class TestCustomScriptShell(TestCase):
         self.script_conf.host_conf.ip = '1.2.3.4'
         self.script_conf.host_conf.connection_method = 'ABCD'
         self.executor.get_expected_file_extensions = Mock(return_value=['B', 'C'])
-        self.downloader.return_value = ScriptFile('file.A', '')
+        self.downloader.return_value = ScriptsData(ScriptFile('file.A', ''))
 
         CustomScriptShell().execute_script(self.context, '', self.cancel_context)
 

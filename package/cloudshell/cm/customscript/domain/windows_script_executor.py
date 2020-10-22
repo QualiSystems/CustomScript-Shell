@@ -16,6 +16,8 @@ from cloudshell.cm.customscript.domain.script_configuration import HostConfigura
 from cloudshell.cm.customscript.domain.script_executor import IScriptExecutor, ErrorMsg, ExcutorConnectionError
 from requests import ConnectionError, ConnectTimeout
 
+from cloudshell.cm.customscript.domain.script_file import ScriptsData
+
 
 class WindowsScriptExecutor(IScriptExecutor):
     COPY_BULK_SIZE = 2000
@@ -62,9 +64,9 @@ class WindowsScriptExecutor(IScriptExecutor):
         # return file_ext != '.ps1':
         #     output_writer.write_warning('Trying to run "%s" file via ssh on host %s' % (file_ext, self.target_host.ip))
 
-    def execute(self, script_file, env_vars, output_writer, print_output=True):
+    def execute(self, scripts_data, env_vars, output_writer, print_output=True):
         """
-        :type script_file: ScriptFile
+        :type scripts_data: ScriptsData
         :type output_writer: ReservationOutputWriter
         :type print_output: bool
         """
@@ -73,19 +75,37 @@ class WindowsScriptExecutor(IScriptExecutor):
         self.logger.info('Done (%s).' % tmp_folder)
 
         try:
-            self.logger.info('Copying "%s" (%s chars) to "%s" target machine ...' % (
-            script_file.name, len(script_file.text), tmp_folder))
-            self.copy_script(tmp_folder, script_file)
-            self.logger.info('Done.')
+            self._copy_all_scripts(tmp_folder, scripts_data)
 
-            self.logger.info('Running "%s" on target machine ...' % script_file.name)
-            self.run_script(tmp_folder, script_file, env_vars, output_writer, print_output)
+            self.logger.info('Running "%s" on target machine ...' % scripts_data.main_script.name)
+            self.run_script(tmp_folder, scripts_data.main_script, env_vars, output_writer, print_output)
             self.logger.info('Done.')
 
         finally:
             self.logger.info('Deleting "%s" folder from target machine ...' % tmp_folder)
             self.delete_temp_folder(tmp_folder)
             self.logger.info('Done.')
+
+    def _copy_all_scripts(self, tmp_folder, scripts_data):
+        self.logger.info('Copying files to target machine')
+
+        self.logger.info('Copying main script "%s" (%s chars) to "%s" target machine ...' % (
+            scripts_data.main_script.name, len(scripts_data.main_script.text), tmp_folder))
+        self.copy_script(tmp_folder, scripts_data.main_script)
+        self.logger.info('Done.')
+
+        if scripts_data.additional_files:
+            for script_file in scripts_data.additional_files:
+                self.logger.info('Copying "%s" (%s chars) to "%s" target machine ...' % (
+                    script_file.name, len(script_file.text), tmp_folder))
+                self.copy_script(tmp_folder, script_file)
+                self.logger.info('Done.')
+
+    def _copy_script(self, tmp_folder, script_file):
+        self.logger.info('Copying "%s" (%s chars) to "%s" target machine ...' % (
+            script_file.name, len(script_file.text), tmp_folder))
+        self.copy_script(tmp_folder, script_file)
+        self.logger.info('Done.')
 
     def create_temp_folder(self):
         """
@@ -133,6 +153,10 @@ Add-Content -value $data -encoding byte -path $path
         code = ''
         for key, value in (env_vars or {}).iteritems():
             code += '\n$env:%s = "%s"' % (key, str(value))
+
+        # add temp folder path as an env var
+        code += '\n$env:%s = "%s"' % (self.TempFolderEnvVarName, str(tmp_folder))
+
         code += """
 $path = Join-Path "{0}" "{1}"
 Invoke-Expression "& '$path'"

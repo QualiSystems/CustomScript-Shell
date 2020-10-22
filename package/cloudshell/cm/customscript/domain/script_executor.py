@@ -1,11 +1,13 @@
 import os
 from abc import abstractmethod, ABCMeta
 
-from cloudshell.cm.customscript.domain.script_file import ScriptFile
+from cloudshell.cm.customscript.domain.script_file import ScriptsData
 
 
 class IScriptExecutor(object):
     __metaclass__ = ABCMeta
+
+    TempFolderEnvVarName = 'CS_ARTIFACTS_PATH'
 
     @abstractmethod
     def connect(self):
@@ -19,9 +21,9 @@ class IScriptExecutor(object):
         pass
 
     @abstractmethod
-    def execute(self, script_file, env_vars, output_writer, print_output):
+    def execute(self, scripts_data, env_vars, output_writer, print_output):
         """
-        :type script_file: ScriptFile
+        :type scripts_data: ScriptsData
         :type output_writer: ReservationOutputWriter
         """
         pass

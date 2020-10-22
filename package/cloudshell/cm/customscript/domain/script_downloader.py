@@ -7,7 +7,11 @@ import re
 import requests
 
 from cloudshell.cm.customscript.domain.cancellation_sampler import CancellationSampler
-from cloudshell.cm.customscript.domain.script_file import ScriptFile
+from cloudshell.cm.customscript.domain.exceptions import FileTypeNotSupportedError
+from cloudshell.cm.customscript.domain.gitlab_script_downloader import GitLabScriptDownloader
+from cloudshell.cm.customscript.domain.script_file import ScriptFile, ScriptsData
+
+ALLOWED_FILES_PATTERN = "(?P<filename>\s*[\w,\s-]+\.(sh|bash|ps1)\s*)"
 
 
 class HttpAuth(object):
@@ -26,7 +30,7 @@ class ScriptDownloader(object):
         """
         self.logger = logger
         self.cancel_sampler = cancel_sampler
-        self.filename_pattern = "(?P<filename>\s*[\w,\s-]+\.(sh|bash|ps1)\s*)"
+        self.filename_pattern = ALLOWED_FILES_PATTERN
         self.filename_patterns = {
             "content-disposition": "\s*((?i)inline|attachment|extension-token)\s*;\s*filename=" + self.filename_pattern,
             "x-artifactory-filename": self.filename_pattern
@@ -36,17 +40,16 @@ class ScriptDownloader(object):
         """
         :type url: str
         :type auth: HttpAuth
-        :rtype ScriptFile
+        :rtype: ScriptsData
         """
+        # identify download strategy
         if auth.username == "GITLAB":
-            response = requests.get(url, headers={'PRIVATE-TOKEN': auth.password})
-            json_response = json.loads(response.text)
-            # get file name and validate
-            file_name = self._get_file_name_gitlab(json_response)
-            # get file content
-            content_bytes = base64.b64decode(json_response['content'])
-            file_txt = content_bytes.decode('ascii')
+            # GitLab strategy
+            scripts_data = GitLabScriptDownloader(self.logger, ALLOWED_FILES_PATTERN)\
+                .download(url, auth)
+
         else:
+            # http with basic auth strategy
             response = requests.get(url, auth=(auth.username, auth.password) if auth else None, stream=True)
             file_name = self._get_filename(response)
             file_txt = ''
@@ -56,16 +59,11 @@ class ScriptDownloader(object):
                     file_txt += ''.join(chunk)
                 self.cancel_sampler.throw_if_canceled()
 
-        self._validate_response(response, file_txt)
+            self._validate_response(response, file_txt)
 
-        return ScriptFile(name=file_name, text=file_txt)
+            scripts_data = ScriptsData(ScriptFile(name=file_name, text=file_txt))
 
-    def _get_file_name_gitlab(self, json_response):
-        file_name = json_response['file_name']
-        matching = re.match(self.filename_pattern, file_name)
-        if not matching:
-            self._raise_file_name_not_valid(file_name)
-        return file_name
+        return scripts_data
 
     def _validate_response(self, response, content):
         if response.status_code < 200 or response.status_code > 300:
@@ -89,8 +87,5 @@ class ScriptDownloader(object):
             if matching:
                 file_name = matching.group('filename')
         if not file_name:
-            self._raise_file_name_not_valid(file_name)
+            raise FileTypeNotSupportedError()
         return file_name.strip()
-
-    def _raise_file_name_not_valid(self, file_name):
-        raise Exception("Script file of supported types: '.sh', '.bash', '.ps1' was not found")

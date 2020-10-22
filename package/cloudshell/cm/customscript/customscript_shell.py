@@ -16,7 +16,7 @@ from cloudshell.cm.customscript.domain.script_configuration import ScriptConfigu
 from cloudshell.cm.customscript.domain.script_downloader import ScriptDownloader, HttpAuth
 from cloudshell.cm.customscript.domain.script_executor import IScriptExecutor, ExcutorConnectionError
 from cloudshell.cm.customscript.domain.script_executor_selector import ScriptExecutorSelector
-from cloudshell.cm.customscript.domain.script_file import ScriptFile
+from cloudshell.cm.customscript.domain.script_file import ScriptFile, ScriptsData
 
 
 class CustomScriptShell(object):
@@ -41,25 +41,26 @@ class CustomScriptShell(object):
                     output_writer = ReservationOutputWriter(api, command_context)
 
                     logger.info('Downloading file from \'%s\' ...' % script_conf.script_repo.url)
-                    script_file = self._download_script(script_conf.script_repo, logger, cancel_sampler)
-                    logger.info('Done (%s, %s chars).' % (script_file.name, len(script_file.text)))
+                    scripts_data = self._download_script(script_conf.script_repo, logger, cancel_sampler)
+                    logger.info('Done (%s, %s chars).' % (scripts_data.main_script.name,
+                                                          len(scripts_data.main_script.text)))
 
                     service = ScriptExecutorSelector.get(script_conf.host_conf, logger, cancel_sampler)
 
-                    self._warn_for_unexpected_file_type(script_conf.host_conf, service, script_file, output_writer)
+                    self._warn_for_unexpected_file_type(script_conf.host_conf, service, scripts_data, output_writer)
 
                     logger.info('Connecting ...')
                     self._connect(service, cancel_sampler, script_conf.timeout_minutes)
                     logger.info('Done.')
 
-                    service.execute(script_file, script_conf.host_conf.parameters, output_writer, script_conf.print_output)
+                    service.execute(scripts_data, script_conf.host_conf.parameters, output_writer, script_conf.print_output)
 
     def _download_script(self, script_repo, logger, cancel_sampler):
         """
         :type script_repo: ScriptRepository
         :type logger: Logger
         :type cancel_sampler: CancellationSampler
-        :rtype ScriptFile
+        :rtype ScriptsData
         """
         url = script_repo.url
         auth = None
@@ -67,14 +68,14 @@ class CustomScriptShell(object):
             auth = HttpAuth(script_repo.username, script_repo.password)
         return ScriptDownloader(logger, cancel_sampler).download(url, auth)
 
-    def _warn_for_unexpected_file_type(self, target_host, service, script_file, output_writer):
+    def _warn_for_unexpected_file_type(self, target_host, service, script_data, output_writer):
         """
         :type target_host: HostConfiguration
         :type service: IScriptExecutor
-        :type script_file: ScriptFile
+        :type script_data: ScriptsData
         :type output_writer: ReservationOutputWriter
         """
-        file_name, file_ext = os.path.splitext(script_file.name)
+        file_name, file_ext = os.path.splitext(script_data.main_script.name)
         if not file_ext in service.get_expected_file_extensions():
             output_writer.write_warning('Trying to run "%s" file via %s on host %s' % (file_ext, target_host.connection_method, target_host.ip))
 
