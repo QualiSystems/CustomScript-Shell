@@ -11,7 +11,6 @@ class TestGitLabScriptDownloader(TestCase):
     def setUp(self):
         self.gitlab_downloader = GitLabScriptDownloader(Mock(), ALLOWED_FILES_PATTERN, Mock())
 
-
     def test_validate_gitlab_url_passes(self):
         # arrange
         url1 = "https://blabla/api/v4/projects/xxx/repository/files/folder1/some_file.txt"
@@ -249,8 +248,7 @@ class TestGitLabScriptDownloader(TestCase):
         self.assertEqual(result.main_script.text, file_txt)
         self.assertEqual(len(result.additional_files), 2)
         self.gitlab_downloader._build_url_to_download_single_file.assert_has_calls([call(ANY, files_list_in_path[0]),
-                                                                               call(ANY, files_list_in_path[1])])
-
+                                                                                    call(ANY, files_list_in_path[1])])
 
     @skip
     def test_integration_download_folder(self):
