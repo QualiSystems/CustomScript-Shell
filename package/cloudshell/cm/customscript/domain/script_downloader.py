@@ -43,9 +43,9 @@ class ScriptDownloader(object):
         :rtype: ScriptsData
         """
         # identify download strategy
-        if auth.username == "GITLAB":
+        if auth.username == 'GITLAB':
             # GitLab strategy
-            scripts_data = GitLabScriptDownloader(self.logger, ALLOWED_FILES_PATTERN)\
+            scripts_data = GitLabScriptDownloader(self.logger, ALLOWED_FILES_PATTERN, self.cancel_sampler)\
                 .download(url, auth)
 
         else:
