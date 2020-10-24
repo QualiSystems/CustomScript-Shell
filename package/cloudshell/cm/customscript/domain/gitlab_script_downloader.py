@@ -142,9 +142,7 @@ class GitLabScriptDownloader(object):
         download_file_url = '{base_url}/api/v4/projects/{id}/repository/files/{file_path}'.format(
             base_url=url_data.base_url, id=url_data.project_id, file_path=file_path_encoded)
 
-        request_vars = {}
-        if url_data.ref:
-            request_vars['ref'] = url_data.ref
+        request_vars = {'ref': url_data.ref if url_data.ref else 'master'}
         query_string = urllib.urlencode(request_vars)
         if query_string:
             download_file_url = download_file_url + '?' + query_string

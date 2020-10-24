@@ -250,6 +250,32 @@ class TestGitLabScriptDownloader(TestCase):
         self.gitlab_downloader._build_url_to_download_single_file.assert_has_calls([call(ANY, files_list_in_path[0]),
                                                                                     call(ANY, files_list_in_path[1])])
 
+    def test_build_url_to_download_single_file_no_ref_in_url_data(self):
+        # arrange
+        url_data = Mock(ref=None)
+        main_file_info = {'path': 'folder1/folder1/file.sh'}
+
+        # act
+        result = self.gitlab_downloader._build_url_to_download_single_file(url_data, main_file_info)
+
+        # assert
+        expected_result = '{base_url}/api/v4/projects/{id}/repository/files/{file_path}?ref=master'.format(
+            base_url=url_data.base_url, id=url_data.project_id, file_path='folder1%2Ffolder1%2Ffile.sh')
+        self.assertEqual(expected_result, result)
+
+    def test_build_url_to_download_single_file_specific_ref_in_url_data(self):
+        # arrange
+        url_data = Mock(ref='release1')
+        main_file_info = {'path': 'folder1/folder1/file.sh'}
+
+        # act
+        result = self.gitlab_downloader._build_url_to_download_single_file(url_data, main_file_info)
+
+        # assert
+        expected_result = '{base_url}/api/v4/projects/{id}/repository/files/{file_path}?ref=release1'.format(
+            base_url=url_data.base_url, id=url_data.project_id, file_path='folder1%2Ffolder1%2Ffile.sh')
+        self.assertEqual(expected_result, result)
+
     @skip
     def test_integration_download_folder(self):
         token = 'FvUPwseibwU8fxJ469Z_'
