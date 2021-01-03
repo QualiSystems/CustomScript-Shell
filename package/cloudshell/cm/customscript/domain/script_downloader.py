@@ -24,7 +24,7 @@ class ScriptDownloader(object):
         """
         self.logger = logger
         self.cancel_sampler = cancel_sampler
-        self.filename_pattern = "(?P<filename>\s*[\w,\s-]+\.(sh|bash|ps1)\s*)"
+        self.filename_pattern = r'(?P<filename>^.*\.(sh|bash|ps1)$)'
         self.filename_patterns = {
             "content-disposition": "\s*((?i)inline|attachment|extension-token)\s*;\s*filename=" + self.filename_pattern,
             "x-artifactory-filename": self.filename_pattern
