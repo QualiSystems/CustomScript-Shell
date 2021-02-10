@@ -14,7 +14,7 @@ class TestScriptDownloader(TestCase):
     def test_download_strategy_gitlab(self, gitlab_downloader_class_patch):
         # arrange
         url = Mock()
-        auth = Mock(username='GITLAB')
+        auth = Mock(username='GITLAB',password=Mock())
         scripts_data = Mock()
         gitalb_downloader = Mock()
         gitalb_downloader.download.return_value = scripts_data

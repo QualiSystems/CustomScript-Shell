@@ -44,16 +44,16 @@ class ScriptDownloader(object):
         :rtype: ScriptsData
         """
         # identify download strategy
+        if auth.username in ['GITLAB','GITHUB']:
+            if auth.username == 'GITLAB':
+                # GitLab strategy
+                scripts_data = GitLabScriptDownloader(self.logger, ALLOWED_FILES_PATTERN, self.cancel_sampler)\
+                    .download(url, auth)
 
-        if auth.username == 'GITLAB':
-            # GitLab strategy
-            scripts_data = GitLabScriptDownloader(self.logger, ALLOWED_FILES_PATTERN, self.cancel_sampler)\
-                .download(url, auth)
-
-        if auth.username == 'GITHUB':
-            # GitLab strategy
-            scripts_data = GitHubScriptDownloader(self.logger, ALLOWED_FILES_PATTERN, self.cancel_sampler) \
-                .download(url, auth)
+            if auth.username == 'GITHUB':
+                # GitLab strategy
+                scripts_data = GitHubScriptDownloader(self.logger, ALLOWED_FILES_PATTERN, self.cancel_sampler) \
+                    .download(url, auth)
 
         else:
             # http with basic auth strategy
