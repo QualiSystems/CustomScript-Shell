@@ -9,6 +9,10 @@ import requests
 from cloudshell.cm.customscript.domain.cancellation_sampler import CancellationSampler
 from cloudshell.cm.customscript.domain.exceptions import FileTypeNotSupportedError
 from cloudshell.cm.customscript.domain.gitlab_script_downloader import GitLabScriptDownloader
+<<<<<<< Updated upstream
+=======
+from cloudshell.cm.customscript.domain.github_script_downloader import GitHubScriptDownloader
+>>>>>>> Stashed changes
 from cloudshell.cm.customscript.domain.script_file import ScriptFile, ScriptsData
 
 ALLOWED_FILES_PATTERN = "(?P<filename>\s*[\w,\s-]+\.(sh|bash|ps1)\s*)"
@@ -43,11 +47,23 @@ class ScriptDownloader(object):
         :rtype: ScriptsData
         """
         # identify download strategy
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
         if auth.username == 'GITLAB':
             # GitLab strategy
             scripts_data = GitLabScriptDownloader(self.logger, ALLOWED_FILES_PATTERN, self.cancel_sampler)\
                 .download(url, auth)
 
+<<<<<<< Updated upstream
+=======
+        if auth.username == 'GITHUB':
+            # GitLab strategy
+            scripts_data = GitHubScriptDownloader(self.logger, ALLOWED_FILES_PATTERN, self.cancel_sampler) \
+                .download(url, auth)
+
+>>>>>>> Stashed changes
         else:
             # http with basic auth strategy
             response = requests.get(url, auth=(auth.username, auth.password) if auth else None, stream=True)
