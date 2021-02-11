@@ -45,59 +45,11 @@ class GitHubScriptDownloader(object):
             return ScriptsData(main_script=ScriptFile(file_name, file_txt))
         else:
             self.logger.info('URL is not for a direct file, dir option (multiple files) is not currently supported')
-        '''
-        else:
-            # download all files in folder
-            self.logger.info('URL is not for a direct file, will try to treat as a dir')
-
-            # 1. list files in repo
-            files_list_in_path = self._get_list_of_files_in_path(auth, url_data)
-
-            # 2. filter out junk files from list
-            files_list_in_path = self._remove_junk_files_and_folders_from_files_list(files_list_in_path)
-
-            # 3. get & verify main.ps1/sh/bash exists
-            main_file_info = self.get_main_file(files_list_in_path)
-
-            # 4. download main file
-            main_file_url = self._build_url_to_download_single_file(url_data, main_file_info)
-            self.logger.info('Downloading main file {} from {}'.format(main_file_info['name'], main_file_url))
-            main_file_name, main_file_txt = self._download_single_file(auth, main_file_url)
-            self.logger.info('Done downloading main file')
-
-            # 5. download additional files
-            # todo: download in parallel
-            additional_files = []
-            for file_info in files_list_in_path:
-                # ignore main file
-                if file_info['name'] == main_file_info['name']:
-                    continue
-
-                file_url = self._build_url_to_download_single_file(url_data, file_info)
-                self.logger.info('Downloading single file {} from {}'.format(file_info['name'], file_url))
-                file_name, file_txt = self._download_single_file(auth, file_url)
-                additional_files.append(ScriptFile(name=file_name, text=file_txt))
-                self.logger.info('Done downloading file {}'.format(file_name))
-
-            return ScriptsData(ScriptFile(main_file_name, main_file_txt), additional_files)
-        '''
-
-    def _get_list_of_files_in_path(self, auth, url_data):
-        list_folder_url = self._build_url_to_list_files_in_path(url_data)
-        self.logger.info('Requesting list of file in directory. API request: {}'.format(list_folder_url))
-        response = requests.get(list_folder_url, headers=self.get_auth_header(auth))
-        files_list_in_path = json.loads(response.text)
-        self._validate_response_list_files(response)
-        self.logger.info('Done getting list of files in dir')
-
-        self.cancel_sampler.throw_if_canceled()
-
-        return files_list_in_path
 
     def _download_single_file(self, auth, url):
         # download file in URL directly
         self.logger.info('Downloading file from {}'.format(url))
-        response = requests.get(url, headers=self.get_auth_header(auth))
+        response = requests.get(url, headers=self._get_auth_header(auth))
         self.logger.info("Response status code from download file {} was {}".format(url,response.status_code))
         json_response = json.loads(response.text)
 
@@ -108,68 +60,18 @@ class GitHubScriptDownloader(object):
         self.logger.info('Downloaded file name: {}'.format(file_name))
 
         # get file content
-        content_bytes = base64.b64decode(json_response['content'])
-        #file_txt = content_bytes.decode('ascii')
-        file_txt = content_bytes
+        file_txt = base64.b64decode(json_response['content'])
 
         self.cancel_sampler.throw_if_canceled()
 
         return file_name, file_txt
-
-    def _remove_junk_files_and_folders_from_files_list(self, files_list_in_path):
-        approved_files = []
-        for item in files_list_in_path:
-            if item['type'] == 'blob' and not item['name'].startswith('.') and not item['name'] == 'README.md':
-                approved_files.append(item)
-        return approved_files
-
-    def get_main_file(self, files_list_in_path):
-        for item in files_list_in_path:
-            m = re.match("^main\.(sh|bash|ps1)$", item['name'])
-            if m:
-                return item
-
-        raise Exception("Main file doesn't exist. When providing url to directory a script file with the "
-                        "name main.ps1|main.sh|main.bash must exist in the folder.")
-
-    def _validate_response_list_files(self, response):
-        if response.status_code < 200 or response.status_code > 300:
-            raise Exception('Failed to list files in path: ' + str(response.status_code) + ' ' + response.reason +
-                            '. Please make sure the URL is valid, and the credentials are correct.')
 
     def _validate_response_single_file(self, response):
         if response.status_code < 200 or response.status_code > 300:
             raise Exception('Failed to download script file: '+str(response.status_code)+' '+response.reason+
                             '. Please make sure the URL is valid, and the credentials are correct.')
 
-    def _build_url_to_download_single_file(self, url_data, main_file_info):
-        # need to url encode the file path
-        file_path_encoded = urllib.quote(main_file_info['path'], safe='')
-        download_file_url = '{base_url}/api/v4/projects/{id}/repository/files/{file_path}'.format(
-            base_url=url_data.base_url, id=url_data.project_id, file_path=file_path_encoded)
-
-        request_vars = {'ref': url_data.ref if url_data.ref else 'master'}
-        query_string = urllib.urlencode(request_vars)
-        if query_string:
-            download_file_url = download_file_url + '?' + query_string
-
-        return download_file_url
-
-    def _build_url_to_list_files_in_path(self, url_data):
-        list_folder_url = '{base_url}/api/v4/projects/{id}/repository/tree'.format(
-            base_url=url_data.base_url, id=url_data.project_id)
-        request_vars = {'per_page': 100}
-        if url_data.ref:
-            request_vars['ref'] = url_data.ref
-        if url_data.file_path:
-            request_vars['path'] = url_data.file_path
-        query_string = urllib.urlencode(request_vars)
-        if query_string:
-            list_folder_url = list_folder_url + '?' + query_string
-
-        return list_folder_url
-
-    def get_auth_header(self, auth):
+    def _get_auth_header(self, auth):
         return {'Authorization': 'token ' + auth.password}
 
     def _get_file_name_from_github_response(self, json_response):

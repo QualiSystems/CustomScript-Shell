@@ -81,7 +81,7 @@ class GitLabScriptDownloader(object):
     def _get_list_of_files_in_path(self, auth, url_data):
         list_folder_url = self._build_url_to_list_files_in_path(url_data)
         self.logger.info('Requesting list of file in directory. API request: {}'.format(list_folder_url))
-        response = requests.get(list_folder_url, headers=self.get_auth_header(auth))
+        response = requests.get(list_folder_url, headers=self._get_auth_header(auth))
         files_list_in_path = json.loads(response.text)
         self._validate_response_list_files(response)
         self.logger.info('Done getting list of files in dir')
@@ -93,7 +93,7 @@ class GitLabScriptDownloader(object):
     def _download_single_file(self, auth, url):
         # download file in URL directly
         self.logger.info('Downloading file from {}'.format(url))
-        response = requests.get(url, headers=self.get_auth_header(auth))
+        response = requests.get(url, headers=self._get_auth_header(auth))
         json_response = json.loads(response.text)
 
         self._validate_response_single_file(response)
@@ -163,7 +163,7 @@ class GitLabScriptDownloader(object):
 
         return list_folder_url
 
-    def get_auth_header(self, auth):
+    def _get_auth_header(self, auth):
         return {'PRIVATE-TOKEN': auth.password}
 
     def _get_file_name_from_gitlab_response(self, json_response):
