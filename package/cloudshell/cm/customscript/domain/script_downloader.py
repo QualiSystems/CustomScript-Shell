@@ -9,6 +9,7 @@ import requests
 from cloudshell.cm.customscript.domain.cancellation_sampler import CancellationSampler
 from cloudshell.cm.customscript.domain.exceptions import FileTypeNotSupportedError
 from cloudshell.cm.customscript.domain.gitlab_script_downloader import GitLabScriptDownloader
+from cloudshell.cm.customscript.domain.github_script_downloader import GitHubScriptDownloader
 from cloudshell.cm.customscript.domain.script_file import ScriptFile, ScriptsData
 
 ALLOWED_FILES_PATTERN = "(?P<filename>\s*[\w,\s-]+\.(sh|bash|ps1)\s*)"
@@ -45,7 +46,12 @@ class ScriptDownloader(object):
         # identify download strategy
         if auth.username == 'GITLAB':
             # GitLab strategy
-            scripts_data = GitLabScriptDownloader(self.logger, ALLOWED_FILES_PATTERN, self.cancel_sampler)\
+            scripts_data = GitLabScriptDownloader(self.logger, ALLOWED_FILES_PATTERN, self.cancel_sampler) \
+                .download(url, auth)
+
+        elif auth.username == 'GITHUB':
+            # GitHub strategy
+            scripts_data = GitHubScriptDownloader(self.logger, ALLOWED_FILES_PATTERN, self.cancel_sampler) \
                 .download(url, auth)
 
         else:
