@@ -100,7 +100,7 @@ class GitHubScriptDownloader(object):
             path = matched_groups['path']
 
             parsed_url = urlparse(url)
-            api_dl_url = '{}://api.{}/repos/{}/{}/contents/{}'.format(parsed_url.scheme, parsed_url.netloc,account_id,repo_id,path)
+            api_dl_url = '{}://api.github.com/repos/{}/{}/contents/{}?ref={}'.format(parsed_url.scheme, account_id,repo_id,path,branch_id)
             self.logger.info('API Call will use the following address {}'.format(api_dl_url))
             return GitHubFileData(account_id, repo_id,branch_id,path, api_dl_url)
         else:

@@ -50,7 +50,7 @@ class ScriptDownloader(object):
                 .download(url, auth)
 
         elif auth.username == 'GITHUB':
-            # GitLab strategy
+            # GitHub strategy
             scripts_data = GitHubScriptDownloader(self.logger, ALLOWED_FILES_PATTERN, self.cancel_sampler) \
                 .download(url, auth)
 
