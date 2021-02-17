@@ -39,10 +39,6 @@ class CustomScriptShell(object):
                     cancel_sampler = CancellationSampler(cancellation_context)
                     script_conf = ScriptConfigurationParser(api).json_to_object(script_conf_json)
 
-                    logger.info('script_conf_json : \'%s\' :: ' % script_conf_json)
-                    logger.info('script_repo.token : \'%s\' :: ' % script_conf.script_repo.token)
-                    logger.info('script_repo.password : \'%s\' :: ' % script_conf.script_repo.password)
-
                     output_writer = ReservationOutputWriter(api, command_context)
 
                     logger.info('Downloading file from \'%s\' ...' % script_conf.script_repo.url)
