@@ -26,7 +26,7 @@ class ScriptDownloader(object):
         """
         self.logger = logger
         self.cancel_sampler = cancel_sampler        
-        self.filename_pattern = r"(?P<filename>^.*\.?[^/\\&\?]+\.(sh|bash|ps1)(?=([\?&].*$|$)))"
+        self.filename_pattern = r"(?P<filename>^.*\.?[^/\\&\?]+\.(sh|bash|ps1)(?=([\?&].*$|$)))" #this regex is to extract the filename from the url, works for cases: filename is at the end, parameter token is at the end
         self.filename_patterns = {
             "content-disposition": "\s*((?i)inline|attachment|extension-token)\s*;\s*filename=" + self.filename_pattern,
             "x-artifactory-filename": self.filename_pattern
@@ -51,7 +51,7 @@ class ScriptDownloader(object):
             file_name = self._get_filename(response)
 
         # repo is private and token provided
-        if not response_valid and auth.token:
+        if not response_valid and auth.token is not None:
             self.logger.info("Token provided. Starting download script with Token...")
             headers = {"Authorization": "Bearer %s" % auth.token }
             response = requests.get(url, stream=True, headers=headers)
@@ -62,7 +62,7 @@ class ScriptDownloader(object):
                 file_name = self._get_filename(response)
 
         # repo is private and credentials provided, and Token did not provided or did not work. this will NOT work for github. github require Token
-        if not response_valid and (auth.username and auth.password):
+        if not response_valid and (auth.username is not None and auth.password is not None):
             self.logger.info("username\password provided, Starting download script with username\password...")
             response = requests.get(url, auth=(auth.username, auth.password) , stream=True)
             file_name = self._get_filename(response)
