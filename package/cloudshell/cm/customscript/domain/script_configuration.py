@@ -21,6 +21,7 @@ class ScriptRepository(object):
         self.url = None
         self.username = None
         self.password = None
+        self.token = None
 
 
 class HostConfiguration(object):
@@ -59,6 +60,7 @@ class ScriptConfigurationParser(object):
         script_conf.script_repo.url = repo.get('url')
         script_conf.script_repo.username = repo.get('username')
         script_conf.script_repo.password = repo.get('password')
+        script_conf.script_repo.token = repo.get('token')
 
         host = json_obj['hostsDetails'][0]
         script_conf.host_conf = HostConfiguration()

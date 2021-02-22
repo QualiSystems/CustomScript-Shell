@@ -38,6 +38,7 @@ class CustomScriptShell(object):
                 with CloudShellSessionContext(command_context) as api:
                     cancel_sampler = CancellationSampler(cancellation_context)
                     script_conf = ScriptConfigurationParser(api).json_to_object(script_conf_json)
+
                     output_writer = ReservationOutputWriter(api, command_context)
 
                     logger.info('Downloading file from \'%s\' ...' % script_conf.script_repo.url)
@@ -64,7 +65,7 @@ class CustomScriptShell(object):
         url = script_repo.url
         auth = None
         if script_repo.username:
-            auth = HttpAuth(script_repo.username, script_repo.password)
+            auth = HttpAuth(script_repo.username, script_repo.password, script_repo.token)
         return ScriptDownloader(logger, cancel_sampler).download(url, auth)
 
     def _warn_for_unexpected_file_type(self, target_host, service, script_file, output_writer):
