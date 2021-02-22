@@ -11,9 +11,10 @@ from cloudshell.cm.customscript.domain.script_downloader import ScriptDownloader
 from cloudshell.cm.customscript.domain.script_configuration import ScriptRepository
 from tests.helpers import mocked_requests_get
 
-import requests_mock
-
 from tests.helpers import Any
+
+def print_logs(message):
+    print(message)
 
 class TestScriptDownloader(TestCase):
     
@@ -25,23 +26,47 @@ class TestScriptDownloader(TestCase):
         self.script_repo = ScriptRepository()
         pass
     
-    @requests_mock.Mocker()
+    @mock.patch('cloudshell.cm.customscript.domain.script_downloader.requests.get', side_effect=mocked_requests_get)
     def test_download_as_public(self, mock_requests):
         # public - url, no credentials
-        public_repo_url = 'https://raw.githubusercontent.com/SomeUser/SomePublicRepo/master/bashScript.sh'
-        script_content = 'SomeBashScriptContent'
+        public_repo_url = 'https://raw.repocontentservice.com/SomeUser/SomePublicRepo/master/bashScript.sh'
         self.auth = HttpAuth('','','')
 
-        # mock response
-        mock_requests.get(public_repo_url, text=script_content)
-
         # set downloaded and downaload
+        self.logger.info = print_logs
         script_downloader = ScriptDownloader(self.logger, self.cancel_sampler)
         script_file = script_downloader.download(public_repo_url, self.auth)
 
         # assert name and content
         self.assertEqual(script_file.name, "bashScript.sh")
         self.assertEqual(script_file.text, "SomeBashScriptContent")
+    
+    @mock.patch('cloudshell.cm.customscript.domain.script_downloader.requests.get', side_effect=mocked_requests_get)
+    def test_download_as_private_with_token(self, mocked_requests_get):
+        # private - url, with token
+        private_repo_url = 'https://raw.repocontentservice.com/SomeUser/SomePrivateTokenRepo/master/bashScript.sh'
+        self.auth = HttpAuth('','','551e48b030e1a9f334a330121863e48e43f58c55')
 
-    def test_download_as_private_with_token(self):
-        pass
+        # set downloaded and downaload
+        self.logger.info = print_logs
+        script_downloader = ScriptDownloader(self.logger, self.cancel_sampler)
+        script_file = script_downloader.download(private_repo_url, self.auth)
+
+        # assert name and content
+        self.assertEqual(script_file.name, "bashScript.sh")
+        self.assertEqual(script_file.text, "SomeBashScriptContent")
+
+    @mock.patch('cloudshell.cm.customscript.domain.script_downloader.requests.get', side_effect=mocked_requests_get)
+    def test_download_as_private_with_credentials_and_failed_token(self, mocked_requests_get):
+        # private - url, with token that fails and user\password. note - this is will not work on GitHub repo, they require token
+        private_repo_url = 'https://raw.repocontentservice.com/SomeUser/SomePrivateCredRepo/master/bashScript.sh'
+        self.auth = HttpAuth('SomeUser','SomePassword','551e48b030e1a9f334a330121863e48e43f0000')
+
+        # set downloaded and downaload
+        self.logger.info = print_logs
+        script_downloader = ScriptDownloader(self.logger, self.cancel_sampler)
+        script_file = script_downloader.download(private_repo_url, self.auth)
+
+        # assert name and content
+        self.assertEqual(script_file.name, "bashScript.sh")
+        self.assertEqual(script_file.text, "SomeBashScriptContent")
