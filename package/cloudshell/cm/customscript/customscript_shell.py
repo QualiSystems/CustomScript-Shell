@@ -33,7 +33,7 @@ class CustomScriptShell(object):
         :rtype str
         """
         with LoggingSessionContext(command_context) as logger:
-            logger.debug('\'execute_script\' is called with the configuration json: \n' + script_conf_json)
+            #logger.debug('\'execute_script\' is called with the configuration json: \n' + script_conf_json)
 
             with ErrorHandlingContext(logger):
                 with CloudShellSessionContext(command_context) as api:
