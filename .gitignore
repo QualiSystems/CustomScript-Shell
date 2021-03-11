@@ -7,3 +7,8 @@ drivers/customscript_shellPackage/Resource Drivers - Python/*.zip
 .eggs/
 cloudshell_cm_customscript.egg-info/
 package/cloudshell_cm_customscript.egg-info/
+.vscode/
+*.stackdump
+dist/
+.venv*/
+venv/

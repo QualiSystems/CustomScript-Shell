@@ -52,7 +52,7 @@ class LinuxScriptExecutor(IScriptExecutor):
             else:
                 raise Exception('Machine credentials are empty.')
         except NoValidConnectionsError as e:
-            error_code = next(iter(list(e.errors.values())), type('e', (object,), {'errno': 0})).errno
+            error_code = next(iter(e.errors.values()), type('e', (object,), {'errno': 0})).errno
             raise ExcutorConnectionError(error_code, e)
         except socket.error as e:
             raise ExcutorConnectionError(e.errno, e)
@@ -127,7 +127,7 @@ class LinuxScriptExecutor(IScriptExecutor):
         :type print_output: bool
         """
         code = ''
-        for key, value in list((env_vars or {}).items()):
+        for key, value in (env_vars or {}).items():
             code += 'export %s=%s;' % (key,self._escape(value))
         if self.target_host.password:
             code += 'export %s=%s;' % (self.PasswordEnvVarName, self._escape(self.target_host.password))
