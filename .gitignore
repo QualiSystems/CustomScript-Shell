@@ -11,3 +11,6 @@ package/cloudshell_cm_customscript.egg-info/
 venv
 dist
 *.stackdump
+dist/
+.venv*/
+venv/

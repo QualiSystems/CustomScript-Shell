@@ -62,13 +62,13 @@ class TestLinuxScriptExecutor(TestCase):
         executor = LinuxScriptExecutor(self.logger, self.host, self.cancel_sampler)
         with self.assertRaises(Exception) as e:
             executor.connect()
-        self.assertEqual('Both password and access key are empty.', e.exception.inner_error.message)
+        self.assertEqual('Both password and access key are empty.', str(e.exception.inner_error))
 
     def test_no_password_no_pen_file_no_username(self):
         executor = LinuxScriptExecutor(self.logger, self.host, self.cancel_sampler)
         with self.assertRaises(Exception) as e:
             executor.connect()
-        self.assertEqual('Machine credentials are empty.', e.exception.inner_error.message)
+        self.assertEqual('Machine credentials are empty.', str(e.exception.inner_error))
 
     def test_create_temp_folder_success(self):
         self._mock_session_answer(0,'tmp123','')
@@ -79,7 +79,7 @@ class TestLinuxScriptExecutor(TestCase):
         self._mock_session_answer(1,'','some error')
         with self.assertRaises(Exception) as e:
             self.executor.create_temp_folder()
-        self.assertEqual(ErrorMsg.CREATE_TEMP_FOLDER % 'some error', e.exception.message)
+        self.assertEqual(ErrorMsg.CREATE_TEMP_FOLDER % 'some error', str(e.exception))
 
     def test_copy_script_success(self):
         transport = Mock()
@@ -93,8 +93,8 @@ class TestLinuxScriptExecutor(TestCase):
         self.scp.send.side_effect = SCPError('some error')
         with self.assertRaises(Exception) as e:
             self.executor.copy_script('tmp123', ScriptFile('script1','some script code'))
-        self.assertIn(ErrorMsg.COPY_SCRIPT % '', e.exception.message)
-        self.assertIn('some error', e.exception.message)
+        self.assertIn(ErrorMsg.COPY_SCRIPT % '', str(e.exception))
+        self.assertIn('some error', str(e.exception))
         self.scp.close.assert_called_once()
 
     def test_run_script_success(self):
@@ -108,7 +108,7 @@ class TestLinuxScriptExecutor(TestCase):
         self._mock_session_answer(1, 'some output', 'some error')
         with self.assertRaises(Exception, ) as e:
             self.executor.run_script('tmp123', ScriptFile('script1', 'some script code'), None, output_writer)
-        self.assertEqual(ErrorMsg.RUN_SCRIPT % 'some error', e.exception.message)
+        self.assertEqual(ErrorMsg.RUN_SCRIPT % 'some error', str(e.exception))
         output_writer.write.assert_any_call('some output')
         output_writer.write.assert_any_call('some error')
 
@@ -120,4 +120,4 @@ class TestLinuxScriptExecutor(TestCase):
         self._mock_session_answer(1,'','some error')
         with self.assertRaises(Exception) as e:
             self.executor.delete_temp_folder('tmp123')
-        self.assertEqual(ErrorMsg.DELETE_TEMP_FOLDER % 'some error', e.exception.message)
+        self.assertEqual(ErrorMsg.DELETE_TEMP_FOLDER % 'some error', str(e.exception))

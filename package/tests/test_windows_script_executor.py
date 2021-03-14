@@ -50,7 +50,7 @@ class TestWindowsScriptExecutor(TestCase):
         self.session.protocol.get_command_output = Mock(return_value=('', 'some error', 1))
         with self.assertRaises(Exception) as e:
             executor.create_temp_folder()
-        self.assertEqual(ErrorMsg.CREATE_TEMP_FOLDER % 'some error', e.exception.message)
+        self.assertEqual(ErrorMsg.CREATE_TEMP_FOLDER % 'some error', str(e.exception))
 
     # Copy script
 
@@ -70,7 +70,7 @@ class TestWindowsScriptExecutor(TestCase):
         self.session.protocol.get_command_output = Mock(return_value=('','some error',1))
         with self.assertRaises(Exception) as e:
             executor.copy_script('tmp123', ScriptFile('script1','some script code'))
-        self.assertEqual(ErrorMsg.COPY_SCRIPT % 'some error', e.exception.message)
+        self.assertEqual(ErrorMsg.COPY_SCRIPT % 'some error', str(e.exception))
 
     # Run script
 
@@ -94,7 +94,7 @@ class TestWindowsScriptExecutor(TestCase):
         self.session.protocol.get_command_output = Mock(return_value=('some output', 'some error', 1))
         with self.assertRaises(Exception, ) as e:
             executor.run_script('tmp123', ScriptFile('script1', 'some script code'), {}, output_writer)
-        self.assertEqual(ErrorMsg.RUN_SCRIPT % 'some error', e.exception.message)
+        self.assertEqual(ErrorMsg.RUN_SCRIPT % 'some error', str(e.exception))
         output_writer.write.assert_any_call('some output')
         output_writer.write.assert_any_call('some error')
 
@@ -110,7 +110,7 @@ class TestWindowsScriptExecutor(TestCase):
         self.session.protocol.get_command_output = Mock(return_value=('some output', err_xml, 1))
         with self.assertRaises(Exception, ) as e:
             executor.run_script('tmp123', ScriptFile('script1', 'some script code'), {}, output_writer)
-        self.assertEqual(ErrorMsg.RUN_SCRIPT % 'some error1\r\nsome error2', e.exception.message)
+        self.assertEqual(ErrorMsg.RUN_SCRIPT % 'some error1\r\nsome error2', str(e.exception))
         output_writer.write.assert_any_call('some output')
         output_writer.write.assert_any_call('some error1\r\nsome error2')
 
@@ -126,4 +126,4 @@ class TestWindowsScriptExecutor(TestCase):
         self.session.protocol.get_command_output = Mock(return_value=('','some error',1))
         with self.assertRaises(Exception) as e:
             executor.delete_temp_folder('tmp123')
-        self.assertEqual(ErrorMsg.DELETE_TEMP_FOLDER % 'some error', e.exception.message)
+        self.assertEqual(ErrorMsg.DELETE_TEMP_FOLDER % 'some error', str(e.exception))

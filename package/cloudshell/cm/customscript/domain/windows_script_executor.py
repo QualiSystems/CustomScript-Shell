@@ -131,7 +131,7 @@ Add-Content -value $data -encoding byte -path $path
         :type print_output: bool
         """
         code = ''
-        for key, value in (env_vars or {}).iteritems():
+        for key, value in (env_vars or {}).items():
             code += '\n$env:%s = "%s"' % (key, str(value))
         code += """
 $path = Join-Path "{0}" "{1}"
@@ -197,8 +197,8 @@ Remove-Item $path -recurse
                 str = re.sub(re.escape('#< CLIXML'), '', str, 1)
                 root = ET.fromstring(str)
                 str = ''.join([e.text for e in root.findall('*/[@S="Error"]')])
-                str = re.sub('_x([0-9a-fA-F]{4})_', lambda match: unichr(int(match.group(1), 16)), str)
+                str = re.sub('_x([0-9a-fA-F]{4})_', lambda match: chr(int(match.group(1), 16)), str)
                 self.logger.error('Sucedded to decode stderr : ' + str)
             except Exception as e:
-                self.logger.error('Failed to decode stderr. Error: %s' % e.message)
+                self.logger.error('Failed to decode stderr. Error: %s' % e.msg)
         return str
