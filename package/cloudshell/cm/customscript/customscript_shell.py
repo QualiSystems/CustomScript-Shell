@@ -63,7 +63,7 @@ class CustomScriptShell(object):
         """
         url = script_repo.url
         auth = None
-        if script_repo.username:
+        if script_repo.username or script_repo.token:
             auth = HttpAuth(script_repo.username, script_repo.password, script_repo.token)
         return ScriptDownloader(logger, cancel_sampler).download(url, auth)
 
