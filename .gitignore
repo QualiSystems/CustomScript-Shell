@@ -9,6 +9,7 @@ cloudshell_cm_customscript.egg-info/
 package/cloudshell_cm_customscript.egg-info/
 .vscode
 venv
+.venv*/
 dist
 *.stackdump
 dist/
