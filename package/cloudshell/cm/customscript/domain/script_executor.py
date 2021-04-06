@@ -4,9 +4,7 @@ from abc import abstractmethod, ABCMeta
 from cloudshell.cm.customscript.domain.script_file import ScriptFile
 
 
-class IScriptExecutor(object):
-    __metaclass__ = ABCMeta
-
+class IScriptExecutor(object, metaclass=ABCMeta):
     @abstractmethod
     def connect(self):
         pass

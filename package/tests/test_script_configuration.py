@@ -14,73 +14,73 @@ class TestScriptConfiguration(TestCase):
         json = '{"timeoutMinutes":"str"}'
         with self.assertRaises(SyntaxError) as context:
             self.parser.json_to_object(json)
-        self.assertIn('Node "timeoutMinutes" must be numeric type.', context.exception.message)
+        self.assertIn('Node "timeoutMinutes" must be numeric type.', str(context.exception))
 
     def test_cannot_parse_json_with_negative_numeric_timeout(self):
         json = '{"timeoutMinutes":-123}'
         with self.assertRaises(SyntaxError) as context:
             self.parser.json_to_object(json)
-        self.assertIn('Node "timeoutMinutes" must be greater/equal to zero.', context.exception.message)
+        self.assertIn('Node "timeoutMinutes" must be greater/equal to zero.', str(context.exception))
 
     def test_cannot_parse_json_without_repository_details(self):
         json = '{}'
         with self.assertRaises(SyntaxError) as context:
             self.parser.json_to_object(json)
-        self.assertIn('Missing "repositoryDetails" node.', context.exception.message)
+        self.assertIn('Missing "repositoryDetails" node.', str(context.exception))
 
     def test_cannot_parse_json_without_repository_url(self):
         json = '{"repositoryDetails":{}}'
         with self.assertRaises(SyntaxError) as context:
             self.parser.json_to_object(json)
-        self.assertIn('Missing/Empty "repositoryDetails.url" node.', context.exception.message)
+        self.assertIn('Missing/Empty "repositoryDetails.url" node.', str(context.exception))
 
     def test_cannot_parse_json_with_an_empty_repository_url(self):
         json = '{"repositoryDetails":{"url":""}}'
         with self.assertRaises(SyntaxError) as context:
             self.parser.json_to_object(json)
-        self.assertIn('Missing/Empty "repositoryDetails.url" node.', context.exception.message)
+        self.assertIn('Missing/Empty "repositoryDetails.url" node.', str(context.exception))
 
     def test_cannot_parse_json_without_hosts_detalis(self):
         json = '{"repositoryDetails":{"url":"someurl"}}'
         with self.assertRaises(SyntaxError) as context:
             self.parser.json_to_object(json)
-        self.assertIn('Missing/Empty "hostsDetails" node.', context.exception.message)
+        self.assertIn('Missing/Empty "hostsDetails" node.', str(context.exception))
 
     def test_cannot_parse_json_with_empty_host_detalis(self):
         json = '{"repositoryDetails":{"url":"someurl"},"hostsDetails":[]}'
         with self.assertRaises(SyntaxError) as context:
             self.parser.json_to_object(json)
-        self.assertIn('Missing/Empty "hostsDetails" node.', context.exception.message)
+        self.assertIn('Missing/Empty "hostsDetails" node.', str(context.exception))
 
     def test_cannot_parse_json_with_multiple_hosts_detalis(self):
         json = '{"repositoryDetails":{"url":"someurl"},"hostsDetails":[{},{}]}'
         with self.assertRaises(SyntaxError) as context:
             self.parser.json_to_object(json)
-        self.assertIn('Node "hostsDetails" must contain only one item.', context.exception.message)
+        self.assertIn('Node "hostsDetails" must contain only one item.', str(context.exception))
 
     def test_cannot_parse_json_with_host_without_an_ip(self):
         json = '{"repositoryDetails":{"url":"someurl"},"hostsDetails":[{"someNode":""}]}'
         with self.assertRaises(SyntaxError) as context:
             self.parser.json_to_object(json)
-        self.assertIn('Missing/Empty "hostsDetails[0].ip" node.', context.exception.message)
+        self.assertIn('Missing/Empty "hostsDetails[0].ip" node.', str(context.exception))
 
     def test_cannot_parse_json_with_host_with_an_empty_ip(self):
         json = '{"repositoryDetails":{"url":"someurl"},"hostsDetails":[{"ip":""}]}'
         with self.assertRaises(SyntaxError) as context:
             self.parser.json_to_object(json)
-        self.assertIn('Missing/Empty "hostsDetails[0].ip" node.', context.exception.message)
+        self.assertIn('Missing/Empty "hostsDetails[0].ip" node.', str(context.exception))
 
     def test_cannot_parse_json_with_host_without_an_connection_method(self):
         json = '{"repositoryDetails":{"url":"someurl"},"hostsDetails":[{"ip":"x.x.x.x"}]}'
         with self.assertRaises(SyntaxError) as context:
             self.parser.json_to_object(json)
-        self.assertIn('Missing/Empty "hostsDetails[0].connectionMethod" node.', context.exception.message)
+        self.assertIn('Missing/Empty "hostsDetails[0].connectionMethod" node.', str(context.exception))
 
     def test_cannot_parse_json_with_host_with_an_empty_connection_method(self):
         json = '{"repositoryDetails":{"url":"someurl"},"hostsDetails":[{"ip":"x.x.x.x", "connectionMethod":""}]}'
         with self.assertRaises(SyntaxError) as context:
             self.parser.json_to_object(json)
-        self.assertIn('Missing/Empty "hostsDetails[0].connectionMethod" node.', context.exception.message)
+        self.assertIn('Missing/Empty "hostsDetails[0].connectionMethod" node.', str(context.exception))
 
     def test_sanity(self):
         def wrapIt(x):
@@ -106,15 +106,15 @@ class TestScriptConfiguration(TestCase):
     }]
 }"""
         conf = self.parser.json_to_object(json)
-        self.assertEquals(12.3, conf.timeout_minutes)
-        self.assertEquals("B", conf.script_repo.url)
-        self.assertEquals("C", conf.script_repo.username)
-        self.assertEquals("D", conf.script_repo.password)
-        self.assertEquals("F", conf.host_conf.username)
-        self.assertEquals("decrypted-G", conf.host_conf.password)
-        self.assertEquals("decrypted-H", conf.host_conf.access_key)
-        self.assertEquals("iiiii", conf.host_conf.connection_method)
-        self.assertItemsEqual('K12', conf.host_conf.parameters['K11'])
-        self.assertItemsEqual('K22', conf.host_conf.parameters['K21'])
+        self.assertEqual(12.3, conf.timeout_minutes)
+        self.assertEqual("B", conf.script_repo.url)
+        self.assertEqual("C", conf.script_repo.username)
+        self.assertEqual("D", conf.script_repo.password)
+        self.assertEqual("F", conf.host_conf.username)
+        self.assertEqual("decrypted-G", conf.host_conf.password)
+        self.assertEqual("decrypted-H", conf.host_conf.access_key)
+        self.assertEqual("iiiii", conf.host_conf.connection_method)
+        self.assertCountEqual('K12', conf.host_conf.parameters['K11'])
+        self.assertCountEqual('K22', conf.host_conf.parameters['K21'])
         self.api.DecryptPassword.assert_any_call('G')
         self.api.DecryptPassword.assert_any_call('H')

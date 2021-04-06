@@ -5,7 +5,6 @@ import errno
 
 import time
 from cloudshell.core.context.error_handling_context import ErrorHandlingContext
-from cloudshell.shell.core.context import ResourceCommandContext
 from cloudshell.shell.core.session.cloudshell_session import CloudShellSessionContext
 from cloudshell.shell.core.session.logging_session import LoggingSessionContext
 
