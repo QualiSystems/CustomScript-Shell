@@ -1,6 +1,7 @@
 from unittest import TestCase
 from mock import patch, Mock
-from scpclient import SCPError
+#from scpclient import SCPError
+from scp import SCPException
 
 from cloudshell.cm.customscript.domain.script_configuration import HostConfiguration
 from cloudshell.cm.customscript.domain.script_executor import ErrorMsg
@@ -22,7 +23,7 @@ class TestLinuxScriptExecutor(TestCase):
 
         self.session_patcher = patch('cloudshell.cm.customscript.domain.linux_script_executor.SSHClient')
         self.session_patcher.start().return_value = self.session
-        self.scp_patcher = patch('cloudshell.cm.customscript.domain.linux_script_executor.Write')
+        self.scp_patcher = patch('cloudshell.cm.customscript.domain.linux_script_executor.SCPClient')
         self.scp_ctor = self.scp_patcher.start()
         self.scp_ctor.return_value = self.scp
 
@@ -85,12 +86,12 @@ class TestLinuxScriptExecutor(TestCase):
         transport = Mock()
         self.session.get_transport.return_value = transport
         self.executor.copy_script('tmp123', ScriptFile('script1','some script code'))
-        self.scp_ctor.assert_called_once_with(transport, 'tmp123')
-        self.scp.send.assert_called_once_with(Any(lambda x: x.getvalue() == 'some script code'),'script1', '0601', 16)
+        self.scp_ctor.assert_called_once_with(transport)
+        self.scp.put.assert_called_once_with('script1', remote_path='tmp123')
         self.scp.close.assert_called_once()
 
     def test_copy_script_fail(self):
-        self.scp.send.side_effect = SCPError('some error')
+        self.scp.put.side_effect = SCPException('some error')
         with self.assertRaises(Exception) as e:
             self.executor.copy_script('tmp123', ScriptFile('script1','some script code'))
         self.assertIn(ErrorMsg.COPY_SCRIPT % '', str(e.exception))
