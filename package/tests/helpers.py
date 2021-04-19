@@ -26,7 +26,8 @@ def mocked_requests_get(*args, **kwargs):
             return self.json_data
 
         def iter_content(self, chunk):
-            return self.json_data
+            yield bytes(self.json_data, 'utf-8')
+            # return self.json_data
 
     if args[0] == repo_dict['public']:
         response = MockResponse(repo_dict['content'], 200, {"Content-Type": "text/plain"}, repo_dict['public'])

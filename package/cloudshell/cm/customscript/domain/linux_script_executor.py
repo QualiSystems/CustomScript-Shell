@@ -2,6 +2,7 @@ import os
 import socket
 import sys
 from io import StringIO
+import io
 from multiprocessing.pool import ThreadPool
 from threading import Thread
 
@@ -108,12 +109,17 @@ class LinuxScriptExecutor(IScriptExecutor):
         """
         scp = SCPClient(self.session.get_transport())
         try:
-            scp.put(script_file.name, remote_path=tmp_folder)
+            fl = io.BytesIO()
+            fl.write(script_file.text.encode('utf-8'))
+            fl.seek(0)
+            remote_path = tmp_folder + '/' + script_file.name
+            scp.putfo(fl, remote_path=remote_path)
         except SCPException as e:
             raise Exception(ErrorMsg.COPY_SCRIPT % str(e)).with_traceback(sys.exc_info()[2])
         finally:
             if scp:
                 scp.close()
+                fl.close()
 
     def run_script(self, tmp_folder, script_file, env_vars, output_writer, print_output=True):
         """

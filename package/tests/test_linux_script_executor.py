@@ -8,7 +8,7 @@ from cloudshell.cm.customscript.domain.script_executor import ErrorMsg
 from cloudshell.cm.customscript.domain.script_file import ScriptFile
 from cloudshell.cm.customscript.domain.linux_script_executor import LinuxScriptExecutor
 from tests.helpers import Any
-
+import io
 
 class TestLinuxScriptExecutor(TestCase):
 
@@ -87,11 +87,11 @@ class TestLinuxScriptExecutor(TestCase):
         self.session.get_transport.return_value = transport
         self.executor.copy_script('tmp123', ScriptFile('script1','some script code'))
         self.scp_ctor.assert_called_once_with(transport)
-        self.scp.put.assert_called_once_with('script1', remote_path='tmp123')
+        self.scp.putfo.assert_called_once_with(Any(type(io.BytesIO)), remote_path='tmp123/script1')
         self.scp.close.assert_called_once()
 
     def test_copy_script_fail(self):
-        self.scp.put.side_effect = SCPException('some error')
+        self.scp.putfo.side_effect = SCPException('some error')
         with self.assertRaises(Exception) as e:
             self.executor.copy_script('tmp123', ScriptFile('script1','some script code'))
         self.assertIn(ErrorMsg.COPY_SCRIPT % '', str(e.exception))
