@@ -79,7 +79,7 @@ class ScriptDownloader(object):
 
         for chunk in response.iter_content(ScriptDownloader.CHUNK_SIZE):
             if chunk:
-                file_txt += ''.join(str(chunk))
+                file_txt += ''.join(str(chunk.decode()))
             self.cancel_sampler.throw_if_canceled()
 
         self._validate_file(file_txt)

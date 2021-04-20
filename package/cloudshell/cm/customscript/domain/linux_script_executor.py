@@ -2,14 +2,14 @@ import os
 import socket
 import sys
 from io import StringIO
+import io
 from multiprocessing.pool import ThreadPool
 from threading import Thread
 
-from scpclient import Write, SCPError
 import time
 from paramiko import SSHClient, AutoAddPolicy, RSAKey
 from paramiko.ssh_exception import NoValidConnectionsError
-#from scp import Write, SCPError
+from scp import SCPClient, SCPException
 
 from cloudshell.cm.customscript.domain.cancellation_sampler import CancellationSampler
 from cloudshell.cm.customscript.domain.reservation_output_writer import ReservationOutputWriter
@@ -107,17 +107,19 @@ class LinuxScriptExecutor(IScriptExecutor):
         :type tmp_folder: str
         :type script_file: ScriptFile
         """
-        file_stream = StringIO(script_file.text)
-        file_size = len(file_stream.getvalue())
-        scp = None
+        scp = SCPClient(self.session.get_transport())
         try:
-            scp = Write(self.session.get_transport(), tmp_folder)
-            scp.send(file_stream, script_file.name, '0601', file_size)
-        except SCPError as e:
+            fl = io.BytesIO()
+            fl.write(script_file.text.encode('utf-8'))
+            fl.seek(0)
+            remote_path = tmp_folder + '/' + script_file.name
+            scp.putfo(fl, remote_path=remote_path)
+        except SCPException as e:
             raise Exception(ErrorMsg.COPY_SCRIPT % str(e)).with_traceback(sys.exc_info()[2])
         finally:
             if scp:
                 scp.close()
+                fl.close()
 
     def run_script(self, tmp_folder, script_file, env_vars, output_writer, print_output=True):
         """
