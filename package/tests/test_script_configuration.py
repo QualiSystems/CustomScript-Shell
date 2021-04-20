@@ -28,6 +28,48 @@ class TestScriptConfiguration(TestCase):
             self.parser.json_to_object(json)
         self.assertIn('Missing "repositoryDetails" node.', str(context.exception))
 
+    def test_verify_certificate_false(self):
+        json = """
+                    {
+                        "verifyCertificate": "nope",
+                        "timeoutMinutes": 12.3,
+                        "repositoryDetails" : {
+                            "url": "B",
+                            "username": "C",
+                            "password": "D"
+                        },
+                        "hostsDetails": [{
+                            "ip": "E",
+                            "username": "F",
+                            "password": "G",
+                            "accessKey": "H",
+                            "connectionMethod": "IiIiI"
+                        }]
+                    }"""
+        res = self.parser.json_to_object(json)
+        self.assertEqual(res.verify_certificate, False)
+
+    def test_verify_certificate_true(self):
+        json = """
+                    {
+                        "verifyCertificate": "TrUe",
+                        "timeoutMinutes": 12.3,
+                        "repositoryDetails" : {
+                            "url": "B",
+                            "username": "C",
+                            "password": "D"
+                        },
+                        "hostsDetails": [{
+                            "ip": "E",
+                            "username": "F",
+                            "password": "G",
+                            "accessKey": "H",
+                            "connectionMethod": "IiIiI"
+                        }]
+                    }"""
+        res = self.parser.json_to_object(json)
+        self.assertEqual(res.verify_certificate, True)
+
     def test_cannot_parse_json_without_repository_url(self):
         json = '{"repositoryDetails":{}}'
         with self.assertRaises(SyntaxError) as context:
@@ -114,7 +156,7 @@ class TestScriptConfiguration(TestCase):
         self.assertEqual("decrypted-G", conf.host_conf.password)
         self.assertEqual("decrypted-H", conf.host_conf.access_key)
         self.assertEqual("iiiii", conf.host_conf.connection_method)
-        self.assertCountEqual('K12', conf.host_conf.parameters['K11'])
-        self.assertCountEqual('K22', conf.host_conf.parameters['K21'])
+        self.assertEqual('K12', conf.host_conf.parameters['K11'])
+        self.assertEqual('K22', conf.host_conf.parameters['K21'])
         self.api.DecryptPassword.assert_any_call('G')
         self.api.DecryptPassword.assert_any_call('H')

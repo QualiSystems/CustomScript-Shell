@@ -35,7 +35,7 @@ class TestScriptDownloader(TestCase):
         # set downloaded and downaload
         self.logger.info = print_logs
         script_downloader = ScriptDownloader(self.logger, self.cancel_sampler)
-        script_file = script_downloader.download(public_repo_url, self.auth)
+        script_file = script_downloader.download(public_repo_url, self.auth, True)
 
         # assert name and content
         self.assertEqual(script_file.name, "bashScript.sh")
@@ -50,7 +50,7 @@ class TestScriptDownloader(TestCase):
         # set downloaded and downaload
         self.logger.info = print_logs
         script_downloader = ScriptDownloader(self.logger, self.cancel_sampler)
-        script_file = script_downloader.download(private_repo_url, self.auth)
+        script_file = script_downloader.download(private_repo_url, self.auth, True)
 
         # assert name and content
         self.assertEqual(script_file.name, "bashScript.sh")
@@ -65,7 +65,7 @@ class TestScriptDownloader(TestCase):
         # set downloaded and downaload
         self.logger.info = print_logs
         script_downloader = ScriptDownloader(self.logger, self.cancel_sampler)
-        script_file = script_downloader.download(private_repo_url, self.auth)
+        script_file = script_downloader.download(private_repo_url, self.auth, True)
 
         # assert name and content
         self.assertEqual(script_file.name, "bashScript.sh")

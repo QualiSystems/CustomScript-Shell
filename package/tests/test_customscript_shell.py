@@ -54,7 +54,7 @@ class TestCustomScriptShell(TestCase):
 
         CustomScriptShell().execute_script(self.context, '', self.cancel_context)
 
-        self.downloader.assert_called_with('some url', None)
+        self.downloader.assert_called_with('some url', None, True)
 
     def test_download_script_with_auth(self):
         self.script_conf.script_repo.url = 'some url'
@@ -63,7 +63,7 @@ class TestCustomScriptShell(TestCase):
 
         CustomScriptShell().execute_script(self.context, '', self.cancel_context)
 
-        self.downloader.assert_called_with('some url', Any(lambda x: x.username == 'admin' and x.password=='1234'))
+        self.downloader.assert_called_with('some url', Any(lambda x: x.username == 'admin' and x.password=='1234'), True)
 
     def test_selector_is_called_with_host_details(self):
         CustomScriptShell().execute_script(self.context, '', self.cancel_context)

@@ -33,7 +33,7 @@ class ScriptDownloader(object):
         }
 
 
-    def download(self, url, auth):
+    def download(self, url, auth, verify_certificate):
         """
         :type url: str
         :type auth: HttpAuth
@@ -44,7 +44,9 @@ class ScriptDownloader(object):
 
         # assume repo is public, try to download without credentials
         self.logger.info("Starting download script as public...")
-        response = requests.get(url, auth=None, stream=True)
+        if not verify_certificate:
+            self.logger.info("Skipping server certificate")
+        response = requests.get(url, auth=None, stream=True, verify=verify_certificate)
         response_valid = self._is_response_valid(response, "public")
 
         if response_valid:
@@ -54,7 +56,7 @@ class ScriptDownloader(object):
         if not response_valid and auth.token is not None:
             self.logger.info("Token provided. Starting download script with Token...")
             headers = {"Authorization": "Bearer %s" % auth.token }
-            response = requests.get(url, stream=True, headers=headers)
+            response = requests.get(url, stream=True, headers=headers, verify=verify_certificate)
             
             response_valid = self._is_response_valid(response, "Token")
 
@@ -64,7 +66,7 @@ class ScriptDownloader(object):
         # repo is private and credentials provided, and Token did not provided or did not work. this will NOT work for github. github require Token
         if not response_valid and (auth.username is not None and auth.password is not None):
             self.logger.info("username\password provided, Starting download script with username\password...")
-            response = requests.get(url, auth=(auth.username, auth.password) , stream=True)
+            response = requests.get(url, auth=(auth.username, auth.password) , stream=True, verify=verify_certificate)
             file_name = self._get_filename(response)
 
             response_valid = self._is_response_valid(response, "username\password")

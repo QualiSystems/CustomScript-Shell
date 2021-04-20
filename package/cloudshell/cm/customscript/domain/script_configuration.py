@@ -14,6 +14,7 @@ class ScriptConfiguration(object):
         self.script_repo = script_repo or ScriptRepository()
         self.host_conf = host_conf or HostConfiguration()
         self.print_output = print_output
+        self.verify_certificate = True
 
 
 class ScriptRepository(object):
@@ -55,6 +56,7 @@ class ScriptConfigurationParser(object):
         script_conf = ScriptConfiguration()
         script_conf.timeout_minutes = json_obj.get('timeoutMinutes', 0.0)
         script_conf.print_output = bool_parse(json_obj.get('printOutput', True))
+        script_conf.verify_certificate = json_obj.get('verifyCertificate', 'true').lower()=='true'
 
         repo = json_obj['repositoryDetails']
         script_conf.script_repo.url = repo.get('url')

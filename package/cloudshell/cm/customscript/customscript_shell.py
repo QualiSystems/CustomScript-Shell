@@ -41,7 +41,7 @@ class CustomScriptShell(object):
                     output_writer = ReservationOutputWriter(api, command_context)
 
                     logger.info('Downloading file from \'%s\' ...' % script_conf.script_repo.url)
-                    script_file = self._download_script(script_conf.script_repo, logger, cancel_sampler)
+                    script_file = self._download_script(script_conf.script_repo, logger, cancel_sampler, script_conf.verify_certificate)
                     logger.info('Done (%s, %s chars).' % (script_file.name, len(script_file.text)))
 
                     service = ScriptExecutorSelector.get(script_conf.host_conf, logger, cancel_sampler)
@@ -54,7 +54,7 @@ class CustomScriptShell(object):
 
                     service.execute(script_file, script_conf.host_conf.parameters, output_writer, script_conf.print_output)
 
-    def _download_script(self, script_repo, logger, cancel_sampler):
+    def _download_script(self, script_repo, logger, cancel_sampler, verify_certificate):
         """
         :type script_repo: ScriptRepository
         :type logger: Logger
@@ -65,7 +65,7 @@ class CustomScriptShell(object):
         auth = None
         if script_repo.username or script_repo.token:
             auth = HttpAuth(script_repo.username, script_repo.password, script_repo.token)
-        return ScriptDownloader(logger, cancel_sampler).download(url, auth)
+        return ScriptDownloader(logger, cancel_sampler).download(url, auth, verify_certificate)
 
     def _warn_for_unexpected_file_type(self, target_host, service, script_file, output_writer):
         """

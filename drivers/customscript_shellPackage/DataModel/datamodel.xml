@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <DataModelInfo xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.qualisystems.com/ResourceManagement/DataModelSchema.xsd">
   <Attributes>
-	<AttributeInfo Name="Execution Server Selector" Type="String" DefaultValue="" Description="This attribute points to a pre-defined group of execution servers. Usually used for different sites or domains." IsReadOnly="false">
-	</AttributeInfo>
-	<AttributeInfo Name="Timeout Minutes" Type="Numeric" DefaultValue="0" Description="Maximum number of minutes to connect to the target machine." IsReadOnly="false">
+    <AttributeInfo Name="Execution Server Selector" Type="String" DefaultValue="" Description="This attribute points to a pre-defined group of execution servers. Usually used for different sites or domains." IsReadOnly="false">
+    </AttributeInfo>
+    <AttributeInfo Name="Timeout Minutes" Type="Numeric" DefaultValue="0" Description="Maximum number of minutes to connect to the target machine." IsReadOnly="false">
+      </AttributeInfo>
+    <AttributeInfo Name="Verify Certificate" Type="String" DefaultValue="True" 
+      Description="Verify server certificate when getting script if True, otherwise ignore." IsReadOnly="false">
     </AttributeInfo>
   </Attributes>
   <ResourceFamilies>
@@ -20,10 +23,12 @@
         <ResourceModel Name="Custom Script Configuration" Description="" SupportsConcurrentCommands="false">
           <AttachedAttributes>
             <AttachedAttribute Name="Timeout Minutes" IsLocal="true" IsOverridable="true"/>
+            <AttachedAttribute Name="Verify Certificate" IsLocal="true" IsOverridable="true" />
           </AttachedAttributes>
           <AttributeValues>
             <AttributeValue Name="Execution Server Selector" Value="" />
             <AttributeValue Name="Timeout Minutes" Value="20" />
+            <AttributeValue Name="Verify Certificate" Value="True" />
           </AttributeValues>
           <ParentModels />
           <Drivers>
