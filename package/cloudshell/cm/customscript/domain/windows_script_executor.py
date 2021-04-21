@@ -29,10 +29,26 @@ class WindowsScriptExecutor(IScriptExecutor):
         self.logger = logger
         self.cancel_sampler = cancel_sampler
         self.pool = ThreadPool(processes=1)
-        if target_host.connection_secured:
-            self.session = winrm.Session(target_host.ip, auth=(target_host.username, target_host.password), transport='ssl')
-        else:
+
+        '''
+        1. if no special flag, first try with ssl, then if ConnectionError retry without
+        2. if parameter ConnectionSecured = True, do just ssl
+        3. if parameter ConnectionSecured = False, do just nossl
+        '''
+
+        if target_host.parameters.get('winrm_transport')=='ssl':
+            self.logger.info('SSL only WinRM session')
+            self.session = winrm.Session(target_host.ip, auth=(target_host.username, target_host.password), transport='ssl', server_cert_validation='ignore')
+        else if target_host.parameters.get('winrm_transport')=='http':
+            self.logger.info('http only WinRM session')
             self.session = winrm.Session(target_host.ip, auth=(target_host.username, target_host.password))
+        else:
+            self.logger.info('identifying whether host is ssl or http')
+            self.session = winrm.Session(target_host.ip, auth=(target_host.username, target_host.password), transport='ssl', server_cert_validation='ignore')
+            try:
+                self.session.run_cmd('@echo connected')
+            else ConnectionError:
+                self.session = winrm.Session(target_host.ip, auth=(target_host.username, target_host.password))
 
     def connect(self):
         try:
