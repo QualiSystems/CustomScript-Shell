@@ -29,21 +29,34 @@ class WindowsScriptExecutor(IScriptExecutor):
         self.logger = logger
         self.cancel_sampler = cancel_sampler
         self.pool = ThreadPool(processes=1)
-        if target_host.connection_secured:
-            self.session = winrm.Session(target_host.ip, auth=(target_host.username, target_host.password), transport='ssl')
-        else:
+
+        # if parameter does not specify winrm_transport, try ssl, then fall back to http
+        if target_host.parameters.get('winrm_transport')=='ssl':
+            self.logger.info('SSL only WinRM session')
+            self.session = winrm.Session(target_host.ip, auth=(target_host.username, target_host.password), transport='ssl', server_cert_validation='ignore')
+        elif target_host.parameters.get('winrm_transport')=='http':
+            self.logger.info('http only WinRM session')
             self.session = winrm.Session(target_host.ip, auth=(target_host.username, target_host.password))
+        else:
+            self.logger.info('identifying whether host is ssl or http')
+            self.session = winrm.Session(target_host.ip, auth=(target_host.username, target_host.password), transport='ssl', server_cert_validation='ignore')
+            try:
+                self.session.run_cmd('@echo connected')
+            except ConnectionError:
+                self.session = winrm.Session(target_host.ip, auth=(target_host.username, target_host.password))
 
     def connect(self):
         try:
             uid = str(uuid4())
             result = self.session.run_cmd('@echo '+uid)
-            assert uid in result.std_out
+            stdout = result.std_out.decode('utf-8')
+            self.logger.info(stdout)
+            assert uid in stdout
         except ConnectTimeout as e:
             self.logger(e.response)
             raise ExcutorConnectionError(10060, e) #10060=Timeout
         except ConnectionError as e:
-            match = re.search(r'\[Errno (?P<errno>\d+)\]', str(e.message))
+            match = re.search(r'\[Errno (?P<errno>\d+)\]', str(e))
             error_code = int(match.group('errno')) if match else 0
             raise ExcutorConnectionError(error_code, e)
         except WinRMTransportError as e:
@@ -99,7 +112,7 @@ Write-Output $fullPath
         result = self._run_cancelable(code)
         if result.status_code != 0:
             raise Exception(ErrorMsg.CREATE_TEMP_FOLDER % result.std_err)
-        return result.std_out.rstrip('\r\n')
+        return result.std_out.decode('utf-8').rstrip('\r\n')
 
     def copy_script(self, tmp_folder, script_file):
         """
@@ -185,9 +198,9 @@ Remove-Item $path -recurse
             self.session.protocol.close_shell(shell_id)
 
         self.logger.debug('ReturnedCode:' + str(result.status_code))
-        self.logger.debug('Stdout:' + result.std_out)
-        self.logger.debug('Stderr:' + result.std_err)
-        result.std_err = self._try_decode_error_xml(result.std_err)
+        self.logger.debug('Stdout:' + result.std_out.decode('utf-8'))
+        self.logger.debug('Stderr:' + result.std_err.decode('utf-8'))
+        result.std_err = self._try_decode_error_xml(result.std_err.decode('utf-8'))
         self.logger.debug('Stderr(Decoded):' + result.std_err)
         return result
 
