@@ -42,8 +42,10 @@ class WindowsScriptExecutor(IScriptExecutor):
             self.session = winrm.Session(target_host.ip, auth=(target_host.username, target_host.password), transport='ssl', server_cert_validation='ignore')
             try:
                 self.session.run_cmd('@echo connected')
+                self.logger.info('connecting via ssl')
             except ConnectionError:
                 self.session = winrm.Session(target_host.ip, auth=(target_host.username, target_host.password))
+                self.logger.info('falling back to http')
 
     def connect(self):
         try:
@@ -211,7 +213,7 @@ Remove-Item $path -recurse
                 root = ET.fromstring(str)
                 str = ''.join([e.text for e in root.findall('*/[@S="Error"]')])
                 str = re.sub('_x([0-9a-fA-F]{4})_', lambda match: chr(int(match.group(1), 16)), str)
-                self.logger.error('Sucedded to decode stderr : ' + str)
+                self.logger.error('Succeeded to decode stderr : ' + str)
             except Exception as e:
                 self.logger.error('Failed to decode stderr. Error: %s' % e.msg)
         return str
