@@ -130,7 +130,7 @@ Write-Output $fullPath
 $path   = Join-Path "{0}" "{1}"
 $data   = [System.Convert]::FromBase64String("{2}")
 Add-Content -value $data -encoding byte -path $path
-""".format(tmp_folder, script_file.name, encoded_bulk)
+""".format(tmp_folder, script_file.name, encoded_bulk.decode('utf-8'))
             result = self._run_cancelable(code)
             if result.status_code != 0:
                 raise Exception(ErrorMsg.COPY_SCRIPT % result.std_err)
