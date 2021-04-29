@@ -113,7 +113,7 @@ Write-Output $fullPath
 """
         result = self._run_cancelable(code)
         if result.status_code != 0:
-            raise Exception(ErrorMsg.CREATE_TEMP_FOLDER % result.std_err)
+            raise Exception(ErrorMsg.CREATE_TEMP_FOLDER % result.std_err.decode('utf-8'))
         return result.std_out.decode('utf-8').rstrip('\r\n')
 
     def copy_script(self, tmp_folder, script_file):
@@ -135,7 +135,7 @@ Add-Content -value $data -encoding byte -path $path
 """.format(tmp_folder, script_file.name, encoded_bulk.decode('utf-8'))
             result = self._run_cancelable(code)
             if result.status_code != 0:
-                raise Exception(ErrorMsg.COPY_SCRIPT % result.std_err)
+                raise Exception(ErrorMsg.COPY_SCRIPT % result.std_err.decode('utf-8'))
 
     def run_script(self, tmp_folder, script_file, env_vars, output_writer, print_output=True):
         """
@@ -154,10 +154,10 @@ Invoke-Expression "& '$path'"
 """.format(tmp_folder, script_file.name)
         result = self._run_cancelable(code)
         if print_output:
-            output_writer.write(result.std_out)
-            output_writer.write(result.std_err)
+            output_writer.write(result.std_out.decode('utf-8'))
+            output_writer.write(result.std_err.decode('utf-8'))
         if result.status_code != 0:
-            raise Exception(ErrorMsg.RUN_SCRIPT % result.std_err)
+            raise Exception(ErrorMsg.RUN_SCRIPT % result.std_err.decode('utf-8'))
 
     def delete_temp_folder(self, tmp_folder):
         """
