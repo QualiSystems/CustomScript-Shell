@@ -72,6 +72,21 @@ class TestScriptDownloader(TestCase):
         self.assertEqual(script_file.text, "SomeBashScriptContent")
 
     @mock.patch('cloudshell.cm.customscript.domain.script_downloader.requests.get', side_effect=mocked_requests_get)
+    def test_download_as_private_with_token_with_gitlab_url_structure(self, mocked_requests_get):
+        # private - url, with token
+        private_repo_url = 'https://gitlab.mock.com/api/v4/SomeUser/SomePrivateTokenRepo/master/bashScript%2Esh/raw?ref=master'
+        self.auth = HttpAuth('','','551e48b030e1a9f334a330121863e48e43f58c55')
+
+        # set downloaded and downaload
+        self.logger.info = print_logs
+        script_downloader = ScriptDownloader(self.logger, self.cancel_sampler)
+        script_file = script_downloader.download(private_repo_url, self.auth, True)
+
+        # assert name and content
+        self.assertEqual(script_file.name, "bashScript.sh")
+        self.assertEqual(script_file.text, "SomeBashScriptContent")
+
+    @mock.patch('cloudshell.cm.customscript.domain.script_downloader.requests.get', side_effect=mocked_requests_get)
     def test_download_as_private_with_credentials_and_failed_token(self, mocked_requests_get):
         # private - url, with token that fails and user\password. note - this is will not work on GitHub repo, they require token
         private_repo_url = 'https://raw.repocontentservice.com/SomeUser/SomePrivateCredRepo/master/bashScript.sh'

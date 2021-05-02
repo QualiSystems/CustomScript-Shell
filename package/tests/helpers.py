@@ -13,6 +13,7 @@ def mocked_requests_get(*args, **kwargs):
         "private_token": 'https://raw.repocontentservice.com/SomeUser/SomePrivateTokenRepo/master/bashScript.sh',
         "private_token_auth_pattern": 'https://gitlab.mock.com/api/v4/SomeUser/SomePrivateTokenRepo/master/bashScript.sh',
         "private_cred": 'https://raw.repocontentservice.com/SomeUser/SomePrivateCredRepo/master/bashScript.sh',
+        "private_cred_gitlab_struct": 'https://gitlab.mock.com/api/v4/SomeUser/SomePrivateTokenRepo/master/bashScript%2Esh/raw?ref=master',
         "content": 'SomeBashScriptContent'
     }
 
@@ -47,6 +48,15 @@ def mocked_requests_get(*args, **kwargs):
                 return response        
             elif kwargs["headers"]["Private-Token"] == 'Bearer 551e48b030e1a9f334a330121863e48e43f58c55':
                 response = MockResponse(repo_dict['content'], 200, {"Content-Type": "text/plain"}, repo_dict['private_token_auth_pattern'])
+                return response
+                    
+    if args[0] == repo_dict['private_cred_gitlab_struct']:
+        if 'headers' in kwargs:
+            if 'Authorization' in kwargs["headers"]:
+                response = MockResponse("error", 404, {"Content-Type": "text/plain"}, "error content")
+                return response        
+            elif kwargs["headers"]["Private-Token"] == 'Bearer 551e48b030e1a9f334a330121863e48e43f58c55':
+                response = MockResponse(repo_dict['content'], 200, {"Content-Type": "text/plain"}, repo_dict['private_cred_gitlab_struct'])
                 return response
 
     if args[0] == repo_dict['private_cred']:
