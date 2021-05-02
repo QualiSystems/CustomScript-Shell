@@ -133,6 +133,7 @@ class ScriptDownloader(object):
                 file_name = matching.group('filename')
 
         # fallback, couldn't find file name regular URL, check gitlab structure (filename in [-2] position)
+        # example for gitlab URL structure - '/repository/files/testfile%2Eps1/raw?ref=master'
         if not file_name:
             file_name_from_url = urllib.parse.unquote(response.url.split('/')[-2])
             matching = re.match(self.filename_pattern, file_name_from_url)
