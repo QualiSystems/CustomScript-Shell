@@ -132,6 +132,13 @@ class ScriptDownloader(object):
             if matching:
                 file_name = matching.group('filename')
 
+        # fallback, couldn't find file name regular URL, check gitlab structure (filename in [-2] position)
+        if not file_name:
+            file_name_from_url = urllib.parse.unquote(response.url.split('/')[-2])
+            matching = re.match(self.filename_pattern, file_name_from_url)
+            if matching:
+                file_name = matching.group('filename')
+
         if not file_name:
             raise Exception("Script file of supported types: '.sh', '.bash', '.ps1' was not found")
         return file_name.strip()
