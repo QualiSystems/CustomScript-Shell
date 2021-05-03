@@ -14,6 +14,7 @@ def mocked_requests_get(*args, **kwargs):
         "private_token_auth_pattern": 'https://gitlab.mock.com/api/v4/SomeUser/SomePrivateTokenRepo/master/bashScript.sh',
         "private_cred": 'https://raw.repocontentservice.com/SomeUser/SomePrivateCredRepo/master/bashScript.sh',
         "private_cred_gitlab_struct": 'https://gitlab.mock.com/api/v4/SomeUser/SomePrivateTokenRepo/master/bashScript%2Esh/raw?ref=master',
+        "bad_url": 'https://badurl.mock.com/SomePublicRepo/master/bashScript.sh',
         "content": 'SomeBashScriptContent'
     }
 
@@ -30,6 +31,9 @@ def mocked_requests_get(*args, **kwargs):
         def iter_content(self, chunk):
             yield bytes(self.json_data, 'utf-8')
             # return self.json_data
+
+    if args[0] == repo_dict['bad_url']:
+        response = MockResponse("error", 404, {"Content-Type": "text/plain"}, "error content")
 
     if args[0] == repo_dict['public']:
         response = MockResponse(repo_dict['content'], 200, {"Content-Type": "text/plain"}, repo_dict['public'])

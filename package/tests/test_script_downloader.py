@@ -100,3 +100,23 @@ class TestScriptDownloader(TestCase):
         # assert name and content
         self.assertEqual(script_file.name, "bashScript.sh")
         self.assertEqual(script_file.text, "SomeBashScriptContent")
+
+    @mock.patch('cloudshell.cm.customscript.domain.script_downloader.requests.get', side_effect=mocked_requests_get)
+    def test_download_fails_public_with_no_credentials_throws_exception(self, mocked_requests_get):
+        # private - url, with token that fails and user\password. note - this is will not work on GitHub repo, they require token
+        private_repo_url = 'https://badurl.mock.com/SomePublicRepo/master/bashScript.sh'
+        self.auth = None
+
+        # set downloaded and downaload
+        self.logger.info = print_logs
+        script_downloader = ScriptDownloader(self.logger, self.cancel_sampler)
+        # script_file = script_downloader.download(private_repo_url, self.auth, True)
+
+        with self.assertRaises(Exception) as context:
+            script_downloader.download(private_repo_url, self.auth, True)
+
+        self.assertIn('Please make sure the URL is valid, and the credentials are correct and necessary.', str(context.exception))
+
+        # assert name and content
+        #self.assertEqual(script_file.name, "bashScript.sh")
+        #self.assertEqual(script_file.text, "SomeBashScriptContent")

@@ -52,6 +52,10 @@ class ScriptDownloader(object):
         if response_valid:
             file_name = self._get_filename(response)
 
+        # if fails on public and no auth - no point carry on, user need to fix his URL or add credentials
+        if not response_valid and auth is None:
+            raise Exception('Please make sure the URL is valid, and the credentials are correct and necessary.')
+
         # repo is private and token provided
         if not response_valid and auth.token is not None:
             self.logger.info("Token provided. Starting download script with Token...")
