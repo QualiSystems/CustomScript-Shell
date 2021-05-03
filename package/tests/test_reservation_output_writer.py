@@ -14,3 +14,11 @@ class TestReservationOutputWriter(TestCase):
         writer = ReservationOutputWriter(session, context)
         writer.write('some msg')
         session.WriteMessageToReservationOutput.assert_called_once_with('1234','some msg')
+
+    def test_write_with_bytes(self):
+        session = Mock()
+        context = Mock()
+        context.reservation.reservation_id = '1234'
+        writer = ReservationOutputWriter(session, context)
+        writer.write(b'some msg')
+        session.WriteMessageToReservationOutput.assert_called_once_with('1234','some msg')

@@ -20,4 +20,5 @@ class ReservationOutputWriter(object):
 
     def _remove_illegal_chars(self, str):
         rx = re.compile('\x00')
+        str = str if not getattr(str, "decode", False) else str.decode()  # can be a bytes-like object
         return rx.sub('', str)
