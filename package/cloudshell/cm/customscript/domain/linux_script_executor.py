@@ -165,7 +165,7 @@ class LinuxScriptExecutor(IScriptExecutor):
             raise Exception(ErrorMsg.DELETE_TEMP_FOLDER % result.std_err)
 
     def _run(self, code):
-        self.logger.debug('BashScript:' + code)
+        #self.logger.debug('BashScript:' + code)
 
         #stdin, stdout, stderr = self._run_cancelable(code)
         stdin, stdout, stderr = self.session.exec_command(code)
