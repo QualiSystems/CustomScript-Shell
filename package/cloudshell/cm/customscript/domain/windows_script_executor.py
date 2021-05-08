@@ -191,7 +191,7 @@ Remove-Item $path -recurse
         """
         :type ps_code: str
         """
-        self.logger.debug('PowerShellScript:' + ps_code)
+        #self.logger.debug('PowerShellScript:' + ps_code)
 
         bat_code = 'powershell -encodedcommand %s' % base64.b64encode(ps_code.encode('utf_16_le')).decode('ascii')
         shell_id = self.session.protocol.open_shell()
