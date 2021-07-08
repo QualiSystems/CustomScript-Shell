@@ -104,6 +104,17 @@ class TestLinuxScriptExecutor(TestCase):
         self.executor.run_script('tmp123', ScriptFile('script1', 'some script code'), {'var1':'123'}, output_writer)
         output_writer.write.assert_any_call('some output')
 
+    def test_run_script_converts_escapes_characters_correctly(self):
+        # escapes characters when passed into terminal, used to set arguments of bash script
+        # using export var; should appear as escaped C style characters see more here:
+        # https://en.wikipedia.org/wiki/Escape_sequences_in_C (hexadecimal)
+        res = self.executor._escape('a')
+        self.assertEquals(res, "$'\\x61'")
+        res = self.executor._escape(1)
+        self.assertEquals(res, "$'\\x31'")
+        res = self.executor._escape(None)
+        self.assertEquals(res, "$'\\x4e\\x6f\\x6e\\x65'")
+
     def test_run_script_fail(self):
         output_writer = Mock()
         self._mock_session_answer(1, 'some output', 'some error')
