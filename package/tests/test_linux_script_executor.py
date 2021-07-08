@@ -114,6 +114,8 @@ class TestLinuxScriptExecutor(TestCase):
         self.assertEquals(res, "$'\\x31'")
         res = self.executor._escape(None)
         self.assertEquals(res, "$'\\x4e\\x6f\\x6e\\x65'")
+        res = self.executor._escape('$')
+        self.assertEquals(res, "$'\\x24'")
 
     def test_run_script_fail(self):
         output_writer = Mock()
