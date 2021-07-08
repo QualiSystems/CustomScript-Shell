@@ -5,6 +5,7 @@ from io import StringIO
 import io
 from multiprocessing.pool import ThreadPool
 from threading import Thread
+import binascii
 
 import time
 from paramiko import SSHClient, AutoAddPolicy, RSAKey
@@ -135,6 +136,7 @@ class LinuxScriptExecutor(IScriptExecutor):
         if self.target_host.password:
             code += 'export %s=%s;' % (self.PasswordEnvVarName, self._escape(self.target_host.password))
         code += 'sh '+tmp_folder+'/'+script_file.name
+        print(code)
         result = self._run_cancelable(code)
         if print_output:
             output_writer.write(result.std_out)
@@ -178,5 +180,5 @@ class LinuxScriptExecutor(IScriptExecutor):
         return async_result.get()
 
     def _escape(self, value):
-        escaped_str = "$'" + '\\x' + '\\x'.join([str(x) for x in str(value).encode("utf-8")]) + "'"
+        escaped_str = "$'" + '\\x' + '\\x'.join([binascii.hexlify(x.encode('utf-8')).decode() for x in str(value)]) + "'"
         return escaped_str
