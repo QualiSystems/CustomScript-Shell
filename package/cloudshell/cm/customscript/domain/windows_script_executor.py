@@ -55,7 +55,7 @@ class WindowsScriptExecutor(IScriptExecutor):
             self.logger.info(stdout)
             assert uid in stdout
         except ConnectTimeout as e:
-            self.logger(e.response)
+            self.logger.error(e.response)
             raise ExcutorConnectionError(10060, e) #10060=Timeout
         except ConnectionError as e:
             match = re.search(r'\[Errno (?P<errno>\d+)\]', str(e))
