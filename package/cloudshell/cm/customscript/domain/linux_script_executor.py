@@ -6,6 +6,7 @@ import io
 from multiprocessing.pool import ThreadPool
 from threading import Thread
 import binascii
+import threading
 
 import time
 from paramiko import SSHClient, AutoAddPolicy, RSAKey
@@ -98,7 +99,7 @@ class LinuxScriptExecutor(IScriptExecutor):
         """
         :rtype str
         """
-        result = self._run_cancelable('mktemp -d')
+        result = self._run_cancelable('mktemp -d', None) #TBD: decide if to pass None or output_writer
         if not result.success:
             raise Exception(ErrorMsg.CREATE_TEMP_FOLDER % result.std_err)
         return result.std_out.rstrip('\n')
@@ -137,10 +138,10 @@ class LinuxScriptExecutor(IScriptExecutor):
             code += 'export %s=%s;' % (self.PasswordEnvVarName, self._escape(self.target_host.password))
         code += 'sh '+tmp_folder+'/'+script_file.name
         print(code)
-        result = self._run_cancelable(code)
-        if print_output:
-            output_writer.write(result.std_out)
-            output_writer.write(result.std_err)
+        result = self._run_cancelable(code, output_writer)
+        #if print_output:
+         #   output_writer.write(result.std_out)
+          #  output_writer.write(result.std_err)
         if not result.success:
             raise Exception(ErrorMsg.RUN_SCRIPT % result.std_err)
 
@@ -148,16 +149,31 @@ class LinuxScriptExecutor(IScriptExecutor):
         """
         :type tmp_folder: str
         """
-        result = self._run_cancelable('rm -rf '+tmp_folder)
+        result = self._run_cancelable('rm -rf '+tmp_folder, None) #TBD: decide if to pass None or output_writer
         if not result.success:
             raise Exception(ErrorMsg.DELETE_TEMP_FOLDER % result.std_err)
 
-    def _run(self, code):
+    def _run(self, code, output_writer):
         self.logger.debug('BashScript:' + code)
 
         #stdin, stdout, stderr = self._run_cancelable(code)
-        stdin, stdout, stderr = self.session.exec_command(code)
+        stdin, stdout, stderr = self.session.exec_command("stdbuf -oL " + code)
 
+        chan = self.session.get_transport().open_session()
+        chan.exec_command(code)
+        def output_reader(chan):         
+            while not chan.exit_status_ready():
+                if chan.recv_ready():
+                    data = chan.recv(1024)
+                    #print "Indside stdout"
+                    while data:
+                        output_writer(data)
+                        data = chan.recv(1024)
+                        print("yay!")
+                       
+
+        t = threading.Thread(target=output_reader, args=(chan,))
+        t.start()
         exit_code = stdout.channel.recv_exit_status()
         stdout_txt = ''.join(stdout.readlines())
         stderr_txt = ''.join(stderr.readlines())
@@ -168,8 +184,8 @@ class LinuxScriptExecutor(IScriptExecutor):
 
         return LinuxScriptExecutor.ExecutionResult(exit_code, stdout_txt, stderr_txt)
 
-    def _run_cancelable(self, txt, *args):
-        async_result = self.pool.apply_async(self._run, kwds={'code': txt % args})
+    def _run_cancelable(self, txt, *args, output_writer):
+        async_result = self.pool.apply_async(self._run, kwds={'code': txt % args, 'output_writer':output_writer})
 
         while not async_result.ready():
             if self.cancel_sampler.is_cancelled():

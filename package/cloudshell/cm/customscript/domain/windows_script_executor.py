@@ -9,7 +9,7 @@ import re
 import winrm
 from logging import Logger
 import xml.etree.ElementTree as ET
-from winrm.exceptions import WinRMTransportError
+from winrm.exceptions import WinRMOperationTimeoutError, WinRMTransportError
 
 from cloudshell.cm.customscript.domain.reservation_output_writer import ReservationOutputWriter
 from cloudshell.cm.customscript.domain.script_configuration import HostConfiguration
@@ -111,7 +111,7 @@ $fullPath = Join-Path $env:Temp ([System.Guid]::NewGuid().ToString())
 New-Item $fullPath -type directory | Out-Null
 Write-Output $fullPath
 """
-        result = self._run_cancelable(code)
+        result = self._run_cancelable(code, None) #TBD: decide if to pass None or output_writer
         if result.status_code != 0:
             raise Exception(ErrorMsg.CREATE_TEMP_FOLDER % result.std_err)
         return result.std_out.decode('utf-8').rstrip('\r\n')
@@ -133,7 +133,7 @@ $path   = Join-Path "{0}" "{1}"
 $data   = [System.Convert]::FromBase64String("{2}")
 Add-Content -value $data -encoding byte -path $path
 """.format(tmp_folder, script_file.name, encoded_bulk.decode('utf-8'))
-            result = self._run_cancelable(code)
+            result = self._run_cancelable(code, None) #TBD: decide if to pass None or output_writer
             if result.status_code != 0:
                 raise Exception(ErrorMsg.COPY_SCRIPT % result.std_err)
 
@@ -152,10 +152,10 @@ Add-Content -value $data -encoding byte -path $path
 $path = Join-Path "{0}" "{1}"
 Invoke-Expression "& '$path'"
 """.format(tmp_folder, script_file.name)
-        result = self._run_cancelable(code)
-        if print_output:
-            output_writer.write(result.std_out)
-            output_writer.write(result.std_err)
+        result = self._run_cancelable(code, output_writer) # TBD: need to pass print_output
+       # if print_output:
+        #    output_writer.write(result.std_out)
+         #   output_writer.write(result.std_err)
         if result.status_code != 0:
             raise Exception(ErrorMsg.RUN_SCRIPT % result.std_err)
 
@@ -167,7 +167,7 @@ Invoke-Expression "& '$path'"
 $path = "%s"
 Remove-Item $path -recurse
 """
-        result = self._run_cancelable(code % tmp_folder)
+        result = self._run_cancelable(code % tmp_folder, None)#TBD: decide if to pass None or output_writer
         if result.status_code != 0:
             raise Exception(ErrorMsg.DELETE_TEMP_FOLDER % result.std_err)
 
@@ -177,8 +177,38 @@ Remove-Item $path -recurse
     #     self.logger.debug('Stdout:' + result.std_out)
     #     self.logger.debug('Stderr:' + result.std_err)
     #     return result
+    def get_command_output1(self, shell_id, command_id, output_writer):
+        """
+        Get the Output of the given shell and command
+        @param string shell_id: The shell id on the remote machine.
+         See #open_shell
+        @param string command_id: The command id on the remote machine.
+         See #run_command
+        #@return [Hash] Returns a Hash with a key :exitcode and :data.
+         Data is an Array of Hashes where the cooresponding key
+        #   is either :stdout or :stderr.  The reason it is in an Array so so
+         we can get the output in the order it ocurrs on
+        #   the console.
+        """
+        #session.WriteMessageToReservationOutput('61c860dd-3a09-4087-9368-3c122fdf48d4', "ofir2")
+        stdout_buffer, stderr_buffer = [], []
+        command_done = False
+        while not command_done:
+            try:
+                stdout, stderr, return_code, command_done = \
+                    self.session.protocol._raw_get_command_output(shell_id, command_id)
+                if output_writer:
+                    output_writer.write("ofir")
+                    output_writer.write(stdout)
+                    #output_writer.write(self._try_decode_error_xml(stderr.decode('utf-8')) )
+                stdout_buffer.append(stdout)
+                stderr_buffer.append(stderr)
+            except WinRMOperationTimeoutError:
+                # this is an expected error when waiting for a long-running process, just silently retry
+                pass
+        return b''.join(stdout_buffer), b''.join(stderr_buffer), return_code
 
-    def _run_cancelable(self, ps_code):
+    def _run_cancelable(self, ps_code, output_writer):
         """
         :type ps_code: str
         """
@@ -188,7 +218,9 @@ Remove-Item $path -recurse
         shell_id = self.session.protocol.open_shell()
         command_id = self.session.protocol.run_command(shell_id, bat_code)
 
-        async_result = self.pool.apply_async(self.session.protocol.get_command_output, kwds={'shell_id': shell_id, 'command_id': command_id})
+        #async_result = self.pool.apply_async(self.session.protocol.get_command_output, kwds={'shell_id': shell_id, 'command_id': command_id})
+        async_result = self.pool.apply_async(self.get_command_output1, kwds={'shell_id': shell_id, 'command_id': command_id, 'output_writer':output_writer})
+
         try:
             while not async_result.ready():
                 if self.cancel_sampler.is_cancelled():
