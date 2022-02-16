@@ -62,7 +62,7 @@ class WindowsScriptExecutor(IScriptExecutor):
             error_code = int(match.group('errno')) if match else 0
             raise ExcutorConnectionError(error_code, e)
         except WinRMTransportError as e:
-            match = re.search(r'Code (?P<errno>\d+)', str(e.message))
+            match = re.search(r'Code (?P<errno>\d+)', str(e))
             error_code = int(match.group('errno')) if match else 0
             raise ExcutorConnectionError(error_code, e)
         except Exception as e:
