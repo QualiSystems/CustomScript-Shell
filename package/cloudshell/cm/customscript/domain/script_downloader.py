@@ -60,7 +60,9 @@ class ScriptDownloader(object):
         if not response_valid and auth.token is not None:
             self.logger.info("Token provided. Starting download script with Token...")
             headers = {"Authorization": "Bearer %s" % auth.token }
-            response = requests.get(url, stream=True, headers=headers, verify=verify_certificate)
+            response = requests.get(url, stream=True, headers=headers, verify=verify_certificate, allow_redirects=False)
+            while response.status_code==302:
+                response = requests.get(response.headers['location'], stream=True,headers=headers, verify=verify_certificate, allow_redirects=False)
             
             response_valid = self._is_response_valid(response, "Token")
 
