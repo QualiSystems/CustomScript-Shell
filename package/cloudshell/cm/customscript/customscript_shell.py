@@ -52,7 +52,7 @@ class CustomScriptShell(object):
                     self._connect(service, cancel_sampler, script_conf.timeout_minutes)
                     logger.info('Done.')
 
-                    service.execute(script_file, script_conf.host_conf.parameters, output_writer, script_conf.print_output)
+                    return service.execute(script_file, script_conf.host_conf.parameters, output_writer, script_conf.print_output)
 
     def _download_script(self, script_repo, logger, cancel_sampler, verify_certificate):
         """
