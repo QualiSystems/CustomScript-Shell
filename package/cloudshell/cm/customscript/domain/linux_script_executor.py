@@ -86,9 +86,9 @@ class LinuxScriptExecutor(IScriptExecutor):
             self.logger.info('Done.')
 
             self.logger.info('Running "%s" on target machine ...' % script_file.name)
-            self.run_script(tmp_folder, script_file, env_vars, output_writer, print_output)
+            output = self.run_script(tmp_folder, script_file, env_vars, output_writer, self.logger, print_output)
             self.logger.info('Done.')
-
+            return output
         finally:
             self.logger.info('Deleting "%s" folder from target machine ...' % tmp_folder)
             self.delete_temp_folder(tmp_folder)
@@ -122,13 +122,14 @@ class LinuxScriptExecutor(IScriptExecutor):
                 scp.close()
                 fl.close()
 
-    def run_script(self, tmp_folder, script_file, env_vars, output_writer, print_output=True):
+    def run_script(self, tmp_folder, script_file, env_vars, output_writer, logger, print_output=True):
         """
         :type tmp_folder: str
         :type script_file: ScriptFile
         :type env_vars: dict
         :type output_writer: ReservationOutputWriter
         :type print_output: bool
+        :type logger: logging.Logger
         """
         code = ''
         for key, value in (env_vars or {}).items():
@@ -138,11 +139,20 @@ class LinuxScriptExecutor(IScriptExecutor):
         code += 'sh '+tmp_folder+'/'+script_file.name
         print(code)
         result = self._run_cancelable(code)
+        logger.info("std_out:")
+        logger.info(result.std_out)
+        if result.std_err:
+            logger.error("std_error:")
+            logger.error(result.std_err)
         if print_output:
-            output_writer.write(result.std_out)
-            output_writer.write(result.std_err)
+            try:
+                output_writer.write(result.std_out)
+                output_writer.write(result.std_err)
+            except Exception as e:
+                logger.error(f"Issue printing output to console. {type(e).__name__}: {str(e)}")
         if not result.success:
             raise Exception(ErrorMsg.RUN_SCRIPT % result.std_err)
+        return result.std_out
 
     def delete_temp_folder(self, tmp_folder):
         """
