@@ -206,14 +206,16 @@ Remove-Item $path -recurse
         self.logger.debug('Stderr(Decoded):' + result.std_err)
         return result
 
-    def _try_decode_error_xml(self, str):
-        if str:
+    def _try_decode_error_xml(self, error_xml):
+        if error_xml:
             try:
-                str = re.sub(re.escape('#< CLIXML'), '', str, 1)
-                root = ET.fromstring(str)
-                str = ''.join([e.text for e in root.findall('*/[@S="Error"]')])
-                str = re.sub('_x([0-9a-fA-F]{4})_', lambda match: chr(int(match.group(1), 16)), str)
-                self.logger.error('Succeeded to decode stderr : ' + str)
+                error_xml = re.sub(re.escape('#< CLIXML'), '', error_xml, 1)
+                root = ET.fromstring(error_xml)
+                errors = root.findall('*/[@S="Error"]')
+                if errors:
+                    error_xml = ''.join([e.text for e in errors if e])
+                    error_xml = re.sub('_x([0-9a-fA-F]{4})_', lambda match: chr(int(match.group(1), 16)), error_xml)
+                    self.logger.error('Succeeded to decode stderr : ' + error_xml)
             except Exception as e:
-                self.logger.error('Failed to decode stderr. Error: %s' % e.msg)
-        return str
+                self.logger.error('Failed to decode stderr. Error: %s' % str(e))
+        return error_xml
