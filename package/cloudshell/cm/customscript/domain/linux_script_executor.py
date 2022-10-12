@@ -90,9 +90,12 @@ class LinuxScriptExecutor(IScriptExecutor):
             self.logger.info('Done.')
 
         finally:
-            self.logger.info('Deleting "%s" folder from target machine ...' % tmp_folder)
-            self.delete_temp_folder(tmp_folder)
-            self.logger.info('Done.')
+            try:
+                self.logger.info('Deleting "%s" folder from target machine ...' % tmp_folder)
+                self.delete_temp_folder(tmp_folder)
+                self.logger.info('Done.')
+            except Exception as e:
+                self.logger.error('Failed to delete temp folder "%s" from target machine: %s' % (tmp_folder, str(e)))
 
     def create_temp_folder(self):
         """
