@@ -216,7 +216,7 @@ Remove-Item $path -recurse
                 root = ET.fromstring(error_xml)
                 errors = root.findall('*/[@S="Error"]')
                 if errors:
-                    error_xml = ''.join([e.text for e in errors if e])
+                    error_xml = ''.join([e.text for e in errors if str(e)])
                     error_xml = re.sub('_x([0-9a-fA-F]{4})_', lambda match: chr(int(match.group(1), 16)), error_xml)
                     self.logger.error('Succeeded to decode stderr : ' + error_xml)
             except Exception as e:
