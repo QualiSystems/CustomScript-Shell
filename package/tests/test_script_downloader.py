@@ -17,7 +17,7 @@ def print_logs(message):
     print(message)
 
 class TestScriptDownloader(TestCase):
-    
+
     def setUp(self):
         self.logger = Mock()
         self.cancel_sampler = Mock()
@@ -25,7 +25,7 @@ class TestScriptDownloader(TestCase):
         self.logger_patcher.start()
         self.script_repo = ScriptRepository()
         pass
-    
+
     @mock.patch('cloudshell.cm.customscript.domain.script_downloader.requests.get', side_effect=mocked_requests_get)
     def test_download_as_public(self, mock_requests):
         # public - url, no credentials
@@ -40,7 +40,7 @@ class TestScriptDownloader(TestCase):
         # assert name and content
         self.assertEqual(script_file.name, "bashScript.sh")
         self.assertEqual(script_file.text, "SomeBashScriptContent")
-    
+
     @mock.patch('cloudshell.cm.customscript.domain.script_downloader.requests.get', side_effect=mocked_requests_get)
     def test_download_as_private_with_token(self, mocked_requests_get):
         # private - url, with token
