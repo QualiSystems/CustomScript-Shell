@@ -119,6 +119,20 @@ class TestWindowsScriptExecutor(TestCase):
         output_writer.write.assert_any_call(b'some output')
         output_writer.write.assert_any_call('some error1\r\nsome error2')
 
+    def test_run_script_fail_with_xml_error_but_no_errors_inside(self):
+        executor = WindowsScriptExecutor(self.logger, self.host, self.cancel_sampler)
+        output_writer = Mock()
+        err_xml = b'''#< CLIXML
+                <Objs Version="1.1.0.1" xmlns="http://schemas.microsoft.com/powershell/2004/04">
+                    <S S="info">some info1_x000D__x000A_</S>
+                    <S S="info">some info2</S>
+                    <S S="warn">some warning</S>
+                </Objs>'''
+        self.session.protocol.get_command_output = Mock(return_value=(b'some output', err_xml, 1))
+        with self.assertRaises(Exception, ) as e:
+            executor.run_script('tmp123', ScriptFile('script1', 'some script code'), {}, output_writer)
+        self.assertEqual(ErrorMsg.RUN_SCRIPT % '', str(e.exception))
+
     # Delete temp folder
 
     def test_delete_temp_folder_success(self):

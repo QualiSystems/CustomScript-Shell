@@ -219,6 +219,8 @@ Remove-Item $path -recurse
                     error_xml = ''.join([e.text for e in errors if str(e)])
                     error_xml = re.sub('_x([0-9a-fA-F]{4})_', lambda match: chr(int(match.group(1), 16)), error_xml)
                     self.logger.error('Succeeded to decode stderr : ' + error_xml)
+                else:
+                    return ""
             except Exception as e:
                 self.logger.error('Failed to decode stderr. Error: %s' % str(e))
         return error_xml
