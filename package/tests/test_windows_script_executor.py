@@ -31,16 +31,16 @@ class TestWindowsScriptExecutor(TestCase):
     def test_http(self):
         self.host.parameters['winrm_transport'] = 'http'
         WindowsScriptExecutor(self.logger, self.host, self.cancel_sampler)
-        self.session_ctor.assert_called_with('1.2.3.4', auth=('admin','1234'))
+        self.session_ctor.assert_called_with('1.2.3.4', auth=('admin', '1234'))
 
     def test_http_fallback(self):
         WindowsScriptExecutor(self.logger, self.host, self.cancel_sampler)
-        self.session_ctor.assert_called_with('1.2.3.4', auth=('admin','1234'), transport='ssl', server_cert_validation='ignore')
+        self.session_ctor.assert_called_with('1.2.3.4', auth=('admin', '1234'), transport='ssl', server_cert_validation='ignore')
 
     def test_https(self):
         self.host.parameters['winrm_transport'] = 'ssl'
         WindowsScriptExecutor(self.logger, self.host, self.cancel_sampler)
-        self.session_ctor.assert_called_with('1.2.3.4', auth=('admin','1234'), transport='ssl', server_cert_validation='ignore')
+        self.session_ctor.assert_called_with('1.2.3.4', auth=('admin', '1234'), transport='ssl', server_cert_validation='ignore')
 
     # Create temp folder
 
@@ -62,19 +62,19 @@ class TestWindowsScriptExecutor(TestCase):
     def test_copy_script_success(self):
         executor = WindowsScriptExecutor(self.logger, self.host, self.cancel_sampler)
         self.session.protocol.get_command_output = Mock(return_value=(b'',b'',0))
-        executor.copy_script('tmp123', ScriptFile('script1','some script code'))
+        executor.copy_script('tmp123', ScriptFile('script1', 'some script code'))
 
     def test_copy_long_script_in_bulks(self):
         executor = WindowsScriptExecutor(self.logger, self.host, self.cancel_sampler)
         self.session.protocol.get_command_output = Mock(return_value=(b'',b'',0))
-        executor.copy_script('tmp123', ScriptFile('script1',''.join(['a' for i in range(0,4500)]))) # 3 bulks: 2000,2000,500
+        executor.copy_script('tmp123', ScriptFile('script1', ''.join(['a' for i in range(0, 4500)]))) # 3 bulks: 2000,2000,500
         self.assertEqual(3, self.session.protocol.get_command_output.call_count)
 
     def test_copy_script_fail(self):
         executor = WindowsScriptExecutor(self.logger, self.host, self.cancel_sampler)
         self.session.protocol.get_command_output = Mock(return_value=(b'',b'some error',1))
         with self.assertRaises(Exception) as e:
-            executor.copy_script('tmp123', ScriptFile('script1','some script code'))
+            executor.copy_script('tmp123', ScriptFile('script1', 'some script code'))
         self.assertEqual(ErrorMsg.COPY_SCRIPT % 'some error', str(e.exception))
 
     # Run script
@@ -146,3 +146,95 @@ class TestWindowsScriptExecutor(TestCase):
         with self.assertRaises(Exception) as e:
             executor.delete_temp_folder('tmp123')
         self.assertEqual(ErrorMsg.DELETE_TEMP_FOLDER % 'some error', str(e.exception))
+
+    # execute
+
+    def test_execute_success(self):
+        executor = WindowsScriptExecutor(self.logger, self.host, self.cancel_sampler)
+        output_writer = Mock()
+        self.session.protocol.get_command_output = Mock(return_value=(b'', b'', 0))
+        executor.create_temp_folder = Mock()
+        create_temp_folder_result = "folder"
+        executor.create_temp_folder.return_value = create_temp_folder_result
+        executor.copy_script = Mock()
+        executor.run_script = Mock()
+        executor.delete_temp_folder = Mock()
+        script_file = ScriptFile('script1', 'some script code')
+        executor.execute(script_file, env_vars={}, output_writer=output_writer)
+        executor.create_temp_folder.assert_called_once()
+        executor.copy_script.assert_called_with(create_temp_folder_result, script_file)
+        executor.run_script.assert_called_with(create_temp_folder_result, script_file, {}, output_writer, True)
+        executor.delete_temp_folder.assert_called_with(create_temp_folder_result)
+
+    def test_execute_error_on_create_temp_folder_exits_before_executing_script(self):
+        executor = WindowsScriptExecutor(self.logger, self.host, self.cancel_sampler)
+        output_writer = Mock()
+        self.session.protocol.get_command_output = Mock(return_value=(b'', b'', 0))
+        executor.create_temp_folder = Mock(side_effect=Exception('error message'))
+        executor.copy_script = Mock()
+        executor.run_script = Mock()
+        executor.delete_temp_folder = Mock()
+        script_file = ScriptFile('script1', 'some script code')
+        with self.assertRaises(Exception) as e:
+            executor.execute(script_file, env_vars={}, output_writer=output_writer)
+        self.assertEqual('error message', str(e.exception))
+        executor.create_temp_folder.assert_called_once()
+        executor.copy_script.assert_not_called()
+        executor.run_script.assert_not_called()
+        executor.delete_temp_folder.assert_not_called()
+
+    def test_execute_error_on_copy_script_exits_before_executing_script_but_cleans_temp_folder(self):
+        executor = WindowsScriptExecutor(self.logger, self.host, self.cancel_sampler)
+        output_writer = Mock()
+        self.session.protocol.get_command_output = Mock(return_value=(b'', b'', 0))
+        executor.create_temp_folder = Mock()
+        create_temp_folder_result = "folder"
+        executor.create_temp_folder.return_value = create_temp_folder_result
+        executor.copy_script = Mock(side_effect=Exception('error message'))
+        executor.run_script = Mock()
+        executor.delete_temp_folder = Mock()
+        script_file = ScriptFile('script1', 'some script code')
+        with self.assertRaises(Exception) as e:
+            executor.execute(script_file, env_vars={}, output_writer=output_writer)
+        self.assertEqual('error message', str(e.exception))
+        executor.create_temp_folder.assert_called_once()
+        executor.copy_script.assert_called_with(create_temp_folder_result, script_file)
+        executor.run_script.assert_not_called()
+        executor.delete_temp_folder.assert_called_with(create_temp_folder_result)
+
+    def test_execute_error_on_run_script_exits_after_cleaning_temp_folder(self):
+        executor = WindowsScriptExecutor(self.logger, self.host, self.cancel_sampler)
+        output_writer = Mock()
+        self.session.protocol.get_command_output = Mock(return_value=(b'', b'', 0))
+        executor.create_temp_folder = Mock()
+        create_temp_folder_result = "folder"
+        executor.create_temp_folder.return_value = create_temp_folder_result
+        executor.copy_script = Mock()
+        executor.run_script = Mock(side_effect=Exception('error message'))
+        executor.delete_temp_folder = Mock()
+        script_file = ScriptFile('script1', 'some script code')
+        with self.assertRaises(Exception) as e:
+            executor.execute(script_file, env_vars={}, output_writer=output_writer)
+        self.assertEqual('error message', str(e.exception))
+        executor.create_temp_folder.assert_called_once()
+        executor.copy_script.assert_called_with(create_temp_folder_result, script_file)
+        executor.run_script.assert_called_with(create_temp_folder_result, script_file, {}, output_writer, True)
+        executor.delete_temp_folder.assert_called_with(create_temp_folder_result)
+
+    def test_execute_error_on_delete_temp_folder_only_logs_this_error(self):
+        executor = WindowsScriptExecutor(self.logger, self.host, self.cancel_sampler)
+        output_writer = Mock()
+        self.session.protocol.get_command_output = Mock(return_value=(b'', b'', 0))
+        executor.create_temp_folder = Mock()
+        create_temp_folder_result = "folder"
+        executor.create_temp_folder.return_value = create_temp_folder_result
+        executor.copy_script = Mock()
+        executor.run_script = Mock()
+        executor.delete_temp_folder = Mock(side_effect=Exception('error message'))
+        script_file = ScriptFile('script1', 'some script code')
+        executor.execute(script_file, env_vars={}, output_writer=output_writer)
+        executor.create_temp_folder.assert_called_once()
+        executor.copy_script.assert_called_with(create_temp_folder_result, script_file)
+        executor.run_script.assert_called_with(create_temp_folder_result, script_file, {}, output_writer, True)
+        executor.delete_temp_folder.assert_called_with(create_temp_folder_result)
+        self.logger.error.assert_called_with(f'Failed to delete temp folder "{create_temp_folder_result}" from target machine: error message')
