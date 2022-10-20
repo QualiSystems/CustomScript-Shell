@@ -1,4 +1,4 @@
-<Driver Description="" MainClass="driver.CustomScriptShellDriver" Name="Custom Script Shell Driver" PythonVersion="3" Version="2.2.0"> 
+<Driver Description="" MainClass="driver.CustomScriptShellDriver" Name="Custom Script Shell Driver" PythonVersion="3" Version="2.2.2"> 
     <Layout>
         <Category Name="General">
             <Command Description="" DisplayName="Execute Script" EnableCancellation="true" Name="execute_script" Tags="allow_unreserved" />
