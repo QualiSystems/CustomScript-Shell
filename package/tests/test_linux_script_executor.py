@@ -135,3 +135,91 @@ class TestLinuxScriptExecutor(TestCase):
         with self.assertRaises(Exception) as e:
             self.executor.delete_temp_folder('tmp123')
         self.assertEqual(ErrorMsg.DELETE_TEMP_FOLDER % 'some error', str(e.exception))
+
+    # execute
+
+    def test_execute_success(self):
+        output_writer = Mock()
+        self.session.protocol.get_command_output = Mock(return_value=(b'', b'', 0))
+        self.executor.create_temp_folder = Mock()
+        create_temp_folder_result = "folder"
+        self.executor.create_temp_folder.return_value = create_temp_folder_result
+        self.executor.copy_script = Mock()
+        self.executor.run_script = Mock()
+        self.executor.delete_temp_folder = Mock()
+        script_file = ScriptFile('script1', 'some script code')
+        self.executor.execute(script_file, env_vars={}, output_writer=output_writer)
+        self.executor.create_temp_folder.assert_called_once()
+        self.executor.copy_script.assert_called_with(create_temp_folder_result, script_file)
+        self.executor.run_script.assert_called_with(create_temp_folder_result, script_file, {}, output_writer, True)
+        self.executor.delete_temp_folder.assert_called_with(create_temp_folder_result)
+
+    def test_execute_error_on_create_temp_folder_exits_before_executing_script(self):
+        output_writer = Mock()
+        self.session.protocol.get_command_output = Mock(return_value=(b'', b'', 0))
+        self.executor.create_temp_folder = Mock(side_effect=Exception('error message'))
+        self.executor.copy_script = Mock()
+        self.executor.run_script = Mock()
+        self.executor.delete_temp_folder = Mock()
+        script_file = ScriptFile('script1', 'some script code')
+        with self.assertRaises(Exception) as e:
+            self.executor.execute(script_file, env_vars={}, output_writer=output_writer)
+        self.assertEqual('error message', str(e.exception))
+        self.executor.create_temp_folder.assert_called_once()
+        self.executor.copy_script.assert_not_called()
+        self.executor.run_script.assert_not_called()
+        self.executor.delete_temp_folder.assert_not_called()
+
+    def test_execute_error_on_copy_script_exits_before_executing_script_but_cleans_temp_folder(self):
+        output_writer = Mock()
+        self.session.protocol.get_command_output = Mock(return_value=(b'', b'', 0))
+        self.executor.create_temp_folder = Mock()
+        create_temp_folder_result = "folder"
+        self.executor.create_temp_folder.return_value = create_temp_folder_result
+        self.executor.copy_script = Mock(side_effect=Exception('error message'))
+        self.executor.run_script = Mock()
+        self.executor.delete_temp_folder = Mock()
+        script_file = ScriptFile('script1', 'some script code')
+        with self.assertRaises(Exception) as e:
+            self.executor.execute(script_file, env_vars={}, output_writer=output_writer)
+        self.assertEqual('error message', str(e.exception))
+        self.executor.create_temp_folder.assert_called_once()
+        self.executor.copy_script.assert_called_with(create_temp_folder_result, script_file)
+        self.executor.run_script.assert_not_called()
+        self.executor.delete_temp_folder.assert_called_with(create_temp_folder_result)
+
+    def test_execute_error_on_run_script_exits_after_cleaning_temp_folder(self):
+        output_writer = Mock()
+        self.session.protocol.get_command_output = Mock(return_value=(b'', b'', 0))
+        self.executor.create_temp_folder = Mock()
+        create_temp_folder_result = "folder"
+        self.executor.create_temp_folder.return_value = create_temp_folder_result
+        self.executor.copy_script = Mock()
+        self.executor.run_script = Mock(side_effect=Exception('error message'))
+        self.executor.delete_temp_folder = Mock()
+        script_file = ScriptFile('script1', 'some script code')
+        with self.assertRaises(Exception) as e:
+            self.executor.execute(script_file, env_vars={}, output_writer=output_writer)
+        self.assertEqual('error message', str(e.exception))
+        self.executor.create_temp_folder.assert_called_once()
+        self.executor.copy_script.assert_called_with(create_temp_folder_result, script_file)
+        self.executor.run_script.assert_called_with(create_temp_folder_result, script_file, {}, output_writer, True)
+        self.executor.delete_temp_folder.assert_called_with(create_temp_folder_result)
+
+    def test_execute_error_on_delete_temp_folder_only_logs_this_error(self):
+        output_writer = Mock()
+        self.session.protocol.get_command_output = Mock(return_value=(b'', b'', 0))
+        self.executor.create_temp_folder = Mock()
+        create_temp_folder_result = "folder"
+        self.executor.create_temp_folder.return_value = create_temp_folder_result
+        self.executor.copy_script = Mock()
+        self.executor.run_script = Mock()
+        self.executor.delete_temp_folder = Mock(side_effect=Exception('error message'))
+        script_file = ScriptFile('script1', 'some script code')
+        self.executor.execute(script_file, env_vars={}, output_writer=output_writer)
+        self.executor.create_temp_folder.assert_called_once()
+        self.executor.copy_script.assert_called_with(create_temp_folder_result, script_file)
+        self.executor.run_script.assert_called_with(create_temp_folder_result, script_file, {}, output_writer, True)
+        self.executor.delete_temp_folder.assert_called_with(create_temp_folder_result)
+        self.logger.error.assert_called_with(
+            f'Failed to delete temp folder "{create_temp_folder_result}" from target machine: error message')
