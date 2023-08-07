@@ -42,8 +42,8 @@ class ScriptDownloader(object):
         self.logger.debug("URL: {}".format(url))
         self.logger.debug("Verify Certificate: {}".format(verify_certificate))
         self.logger.debug("Username: {}".format(auth.username))
-        self.logger.debug("Password: {}".format(auth.password))
-        self.logger.debug("Token: {}".format(auth.token))
+        # self.logger.debug("Password: {}".format(auth.password))
+        # self.logger.debug("Token: {}".format(auth.token))
 
         if not verify_certificate:
             self.logger.info("Skipping server certificate")

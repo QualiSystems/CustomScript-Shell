@@ -148,9 +148,9 @@ Add-Content -value $data -encoding byte -path $path
         :type output_writer: ReservationOutputWriter
         :type print_output: bool
         """
-        code = ''
+        code = ""
         for key, value in (env_vars or {}).items():
-            code += '\n$env:%s = "%s"' % (key, str(value))
+            code += "\n$env:%s = '%s'" % (key, str(value))
         code += """
 $path = Join-Path "{0}" "{1}"
 Invoke-Expression "& '$path'"
