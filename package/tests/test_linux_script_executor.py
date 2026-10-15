@@ -109,13 +109,13 @@ class TestLinuxScriptExecutor(TestCase):
         # using export var; should appear as escaped C style characters see more here:
         # https://en.wikipedia.org/wiki/Escape_sequences_in_C (hexadecimal)
         res = self.executor._escape('a')
-        self.assertEquals(res, "$'\\x61'")
+        self.assertEqual(res, "$'\\x61'")
         res = self.executor._escape(1)
-        self.assertEquals(res, "$'\\x31'")
+        self.assertEqual(res, "$'\\x31'")
         res = self.executor._escape(None)
-        self.assertEquals(res, "$'\\x4e\\x6f\\x6e\\x65'")
+        self.assertEqual(res, "$'\\x4e\\x6f\\x6e\\x65'")
         res = self.executor._escape('$')
-        self.assertEquals(res, "$'\\x24'")
+        self.assertEqual(res, "$'\\x24'")
 
     def test_run_script_fail(self):
         output_writer = Mock()
